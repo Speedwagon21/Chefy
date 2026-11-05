@@ -180,6 +180,16 @@ router.patch('/me', requireUser, (req, res) => {
 });
 
 // ---------- browsing ----------
+// How many of each dish were ordered and paid for in the last 30 days (drives "Trending" and "Popular").
+function popularity() {
+  return Object.fromEntries(all(`SELECT oi.dish_id, SUM(oi.qty) AS n FROM order_items oi JOIN orders o ON o.id = oi.order_id
+    WHERE o.payment_status IN ('authorized', 'captured') AND o.created_at > ? GROUP BY oi.dish_id`, now() - 30 * 86400000)
+    .map(r => [r.dish_id, r.n]));
+}
+function savedSet(req) {
+  return new Set(req.user ? all('SELECT dish_id FROM saved_dishes WHERE user_id = ?', req.user.id).map(r => r.dish_id) : []);
+}
+
 router.get('/dishes', (req, res) => {
   const chefs = all('SELECT * FROM chefs').filter(chefIsLive);
   const byId = Object.fromEntries(chefs.map(c => [c.user_id, publicChef(c)]));
@@ -188,7 +198,31 @@ router.get('/dishes', (req, res) => {
     ? all(`SELECT * FROM dishes WHERE deleted = 0 AND chef_id IN (${ids.map(() => '?').join(',')})
            ORDER BY available DESC, created_at DESC`, ...ids)
     : [];
-  res.json({ dishes: dishes.map(d => ({ ...dishOut(d), chef: byId[d.chef_id] })) });
+  const pop = popularity(), saved = savedSet(req);
+  res.json({ dishes: dishes.map(d => ({ ...dishOut(d), chef: byId[d.chef_id], popularity: pop[d.id] || 0, saved: saved.has(d.id) })) });
+});
+
+router.get('/saved', requireUser, (req, res) => {
+  const rows = all(`SELECT d.* FROM saved_dishes s JOIN dishes d ON d.id = s.dish_id
+                    WHERE s.user_id = ? AND d.deleted = 0 ORDER BY s.created_at DESC`, req.user.id);
+  const chefs = {};
+  const pop = popularity();
+  const dishes = [];
+  for (const d of rows) {
+    const c = chefs[d.chef_id] ??= one('SELECT * FROM chefs WHERE user_id = ?', d.chef_id);
+    if (!c || c.permit_status !== 'verified') continue;
+    const out = { ...dishOut(d), chef: publicChef(c), popularity: pop[d.id] || 0, saved: true };
+    if (!chefIsLive(c)) out.available = false;
+    dishes.push(out);
+  }
+  res.json({ dishes });
+});
+router.post('/saved/:dishId', requireUser, (req, res) => {
+  const dishId = Number(req.params.dishId);
+  if (!one('SELECT 1 FROM dishes WHERE id = ? AND deleted = 0', dishId)) throw new HttpError(404, 'That dish is no longer listed.');
+  if (req.body.saved === false) run('DELETE FROM saved_dishes WHERE user_id = ? AND dish_id = ?', req.user.id, dishId);
+  else run('INSERT OR IGNORE INTO saved_dishes (user_id, dish_id, created_at) VALUES (?, ?, ?)', req.user.id, dishId, now());
+  res.json({ ok: true, saved: req.body.saved !== false });
 });
 
 router.get('/chefs/:id', (req, res) => {
@@ -198,7 +232,8 @@ router.get('/chefs/:id', (req, res) => {
   const reviews = all(`SELECT r.rating, r.text, r.created_at, u.name FROM reviews r JOIN users u ON u.id = r.eater_id
                        WHERE r.chef_id = ? ORDER BY r.created_at DESC LIMIT 20`, c.user_id)
     .map(r => ({ rating: r.rating, text: r.text, at: r.created_at, name: r.name.split(' ')[0] }));
-  res.json({ chef: publicChef(c), dishes: dishes.map(dishOut), reviews });
+  const pop = popularity(), saved = savedSet(req);
+  res.json({ chef: publicChef(c), dishes: dishes.map(d => ({ ...dishOut(d), popularity: pop[d.id] || 0, saved: saved.has(d.id) })), reviews });
 });
 
 // ---------- uploads ----------

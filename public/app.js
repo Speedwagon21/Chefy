@@ -52,7 +52,7 @@ function avatar(url, name, cls = 'w-10 h-10 rounded-xl') {
 function dishImg(url, cls) {
   return url
     ? `<img src="${esc(url)}" alt="" loading="lazy" class="${cls} object-cover bg-slate-100">`
-    : `<div class="${cls} bg-gradient-to-br from-amber-100 to-brand-100 flex items-center justify-center text-brand-500 text-2xl" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></div>`;
+    : `<div class="${cls} bg-gradient-to-br from-slate-100 to-brand-100 flex items-center justify-center text-brand-500 text-2xl" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></div>`;
 }
 function stars(avg, count) {
   if (!count) return '<span class="text-slate-400">New</span>';
@@ -108,16 +108,16 @@ async function render() {
   closeSheet(true);
   const { parts, query } = route();
   const top = parts[0] || '';
-  const navKey = { '': 'eat', chef: 'eat', welcome: 'eat', orders: 'orders', kitchen: 'kitchen', account: 'account', admin: 'account' }[top] || 'eat';
+  const navKey = { '': 'eat', chef: 'eat', welcome: 'eat', orders: 'orders', saved: 'saved', kitchen: 'kitchen', account: 'account', admin: 'account' }[top] || 'eat';
   document.querySelectorAll('[data-nav]').forEach(a => a.setAttribute('aria-current', a.dataset.nav === navKey ? 'page' : 'false'));
-  setHeader(top);
+  setHeader();
   try {
     if (!top && !S.me.user && !store.get('chefy_seen_welcome', false)) return go('#/welcome');
     const views = {
       '': () => eatView(query), welcome: welcomeView, chef: () => chefView(parts[1]),
       orders: () => parts[1] ? orderView(parts[1], query) : ordersView(),
       kitchen: () => parts[1] === 'setup' ? setupView(query) : kitchenView(query),
-      account: accountView, admin: adminView
+      saved: savedView, account: accountView, admin: adminView
     };
     await (views[top] || notFoundView)();
   } catch (e) {
@@ -127,27 +127,31 @@ async function render() {
   if (seq === renderSeq) updateBasketBar();
 }
 
-function setHeader(top) {
-  $('#headerTitle').textContent = { kitchen: 'My Kitchen', orders: 'Orders', account: 'Account', admin: 'Admin' }[top] || 'Chefy';
-  const right = $('#headerRight');
-  if (top === '' || top === 'chef') {
-    const n = basketCount();
-    right.innerHTML = `<button data-act="open-basket" class="relative w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center" aria-label="Basket, ${n} items">
-      <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
-      ${n ? `<span class="absolute -top-1.5 -right-1.5 min-w-[1.25rem] h-5 px-1 bg-brand-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center border-2 border-white">${n}</span>` : ''}
-    </button>`;
-  } else right.innerHTML = '';
+function setHeader() {
+  const n = basketCount(), u = S.me.user;
+  $('#headerRight').innerHTML = `
+    ${n ? `<button data-act="open-basket" class="relative w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-900 flex items-center justify-center" aria-label="Basket, ${n} item${n === 1 ? '' : 's'}">
+      <i class="fa-solid fa-basket-shopping text-lg" aria-hidden="true"></i>
+      <span class="absolute -top-0.5 -right-0.5 min-w-[1.3rem] h-[1.3rem] px-1 bg-brand-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">${n}</span></button>` : ''}
+    <a href="#/account" class="w-12 h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center ${u ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'}" aria-label="${u ? 'Your account' : 'Sign in'}">
+      ${u ? `<span class="text-sm font-black">${initials(u.name)}</span>` : '<i class="fa-solid fa-user text-xl" aria-hidden="true"></i>'}</a>`;
+  const fab = $('#fab');
+  const chef = !!S.me.chef;
+  fab.setAttribute('aria-label', chef ? 'Add a dish to your menu' : `Basket, ${n} item${n === 1 ? '' : 's'}`);
+  const badge = $('#fabBadge');
+  badge.textContent = n;
+  badge.classList.toggle('hidden', chef || !n); badge.classList.toggle('flex', !chef && !!n);
 }
 
 function updateBasketBar() {
   const { parts } = route();
-  const onShop = !parts[0] || parts[0] === 'chef';
+  const onShop = !parts[0] || parts[0] === 'chef' || parts[0] === 'saved';
   const n = basketCount();
   const bar = $('#basketBar');
   bar.classList.toggle('hidden', !(onShop && n > 0) || !!$('#sheetRoot').firstChild);
   $('#basketBarCount').textContent = n;
   $('#basketBarTotal').textContent = money(basketTotals().subtotal);
-  if (onShop) setHeader(parts[0] || '');
+  setHeader();
 }
 
 const stateCard = (icon, title, body, extra = '') => `
@@ -226,15 +230,16 @@ async function afterSignedIn(me, isNew) {
 async function welcomeView() {
   view.innerHTML = `
   <section class="space-y-6">
-    <div class="relative -mx-4 -mt-4 px-5 pt-8 pb-10 lg:mx-0 lg:mt-0 lg:rounded-3xl lg:px-14 lg:py-20 bg-gradient-to-br from-slate-900 via-amber-950 to-brand-800 text-white overflow-hidden">
-      <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#fb923c_1px,transparent_1px)] [background-size:16px_16px]" aria-hidden="true"></div>
+    <div class="relative -mx-4 -mt-4 px-5 pt-8 pb-10 lg:mx-0 lg:mt-0 lg:rounded-3xl lg:px-14 lg:py-20 bg-slate-950 text-white overflow-hidden">
+      <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=1400&auto=format&fit=crop&q=75" alt="" class="absolute inset-y-0 right-0 w-full lg:w-3/5 h-full object-cover opacity-35 lg:opacity-100">
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950 from-30% via-slate-950/85 to-slate-950/30" aria-hidden="true"></div>
       <div class="relative space-y-4 lg:space-y-6 lg:max-w-2xl">
-        <span class="chip bg-amber-500/20 border border-amber-400/30 text-amber-200"><i class="fa-solid fa-shield-halved text-emerald-300" aria-hidden="true"></i> Every cook's permit is checked</span>
-        <h1 class="text-[2rem] lg:text-6xl leading-[1.1] font-black tracking-tight">Dinner from the kitchen <span class="text-amber-300">down the street.</span></h1>
+        <span class="chip bg-brand-500/20 border border-brand-400/30 text-brand-100"><i class="fa-solid fa-shield-halved text-emerald-300" aria-hidden="true"></i> Every cook's permit is checked</span>
+        <h1 class="text-[2rem] lg:text-6xl leading-[1.1] font-black tracking-tight">Dinner from the kitchen <span class="text-brand-400">down the street.</span></h1>
         <p class="text-sm lg:text-lg text-slate-200 leading-relaxed lg:max-w-xl">Tamales, birria, fresh bread and cookies made by home cooks in your neighborhood. Order ahead, pick up warm.</p>
         <div class="flex flex-col lg:flex-row gap-2.5 lg:gap-3 pt-1">
-          <button data-act="welcome-browse" class="py-3.5 lg:px-8 hover:bg-brand-600 bg-brand-500 active:bg-brand-600 rounded-xl font-bold text-sm shadow-lg shadow-brand-900/30">See what's cooking nearby</button>
-          <button data-act="welcome-signup" class="py-3.5 lg:px-8 hover:bg-white/20 bg-white/10 border border-white/25 rounded-xl font-bold text-sm">Create a free account</button>
+          <button data-act="welcome-browse" class="py-3.5 lg:px-8 bg-brand-600 hover:bg-brand-700 rounded-full font-bold text-sm shadow-lg shadow-brand-900/30">See what's cooking nearby</button>
+          <button data-act="welcome-signup" class="py-3.5 lg:px-8 hover:bg-white/20 bg-white/10 border border-white/25 rounded-full font-bold text-sm">Create a free account</button>
         </div>
       </div>
     </div>
@@ -257,14 +262,14 @@ async function welcomeView() {
     </div>
 
     <div class="rounded-3xl p-5 lg:p-8 bg-slate-900 text-white space-y-3">
-      <p class="chip bg-white/10 text-amber-200">For home cooks</p>
+      <p class="chip bg-white/10 text-brand-200">For home cooks</p>
       <h2 class="text-xl font-black leading-tight">Sell your cooking to neighbors, legally.</h2>
       <ul class="text-xs text-slate-300 space-y-1.5">
         <li><i class="fa-solid fa-check text-emerald-400 mr-1.5" aria-hidden="true"></i> You set the menu, the prices and when you're open</li>
         <li><i class="fa-solid fa-check text-emerald-400 mr-1.5" aria-hidden="true"></i> Customers pay upfront; the money's held before you start cooking</li>
         <li><i class="fa-solid fa-check text-emerald-400 mr-1.5" aria-hidden="true"></i> Chefy keeps 10% of food sales. Tips are 100% yours</li>
       </ul>
-      <button data-act="start-cooking" class="w-full lg:w-auto lg:px-8 py-3.5 bg-white hover:bg-amber-50 text-slate-900 rounded-xl font-bold text-sm">Open your kitchen</button>
+      <button data-act="start-cooking" class="w-full lg:w-auto lg:px-8 py-3.5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl font-bold text-sm">Open your kitchen</button>
     </div>
     </div>
     <p class="text-center text-[11px] text-slate-400 pb-2">Chefy · Homemade food from neighbors</p>
@@ -272,71 +277,148 @@ async function welcomeView() {
 }
 
 // ============ eat ============
+const CAT_ICONS = { All: 'fa-border-all', Tamales: 'fa-leaf', Tacos: 'fa-pepper-hot', Bakery: 'fa-bread-slice', 'Hot Meals': 'fa-fire-burner', Desserts: 'fa-cake-candles', Other: 'fa-utensils' };
+const SORTS = { popular: 'Most popular', rating: 'Top rated', price: 'Lowest price', quick: 'Quickest' };
+const DEFAULT_FILTERS = { sort: 'popular', dietary: '', availableOnly: false };
+S.filters = { ...DEFAULT_FILTERS, ...store.get('chefy_filters', {}) };
+const filtersActive = () => S.filters.sort !== 'popular' || !!S.filters.dietary || S.filters.availableOnly;
+const prepMinutes = d => { const m = /\d+/.exec(d.prepTime || ''); return m ? Number(m[0]) : 999; };
+const seeAll = id => `<button ${id ? `id="${id}"` : ''} data-act="${id === 'seeAllBtn' ? 'see-all' : 'filters'}" class="text-sm font-bold text-brand-600 hover:text-brand-700 h-11 flex items-center gap-1.5">See all <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`;
+const skeletonCards = n => Array.from({ length: n }, () => `<div class="card overflow-hidden"><div class="skeleton aspect-[4/3] rounded-none"></div><div class="p-3 space-y-2"><div class="skeleton h-4 w-5/6"></div><div class="skeleton h-3 w-2/3"></div><div class="skeleton h-6 w-12"></div></div></div>`).join('');
+const cardGrid = 'grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4 lg:gap-5';
+
 async function loadDishes(force) {
   if (!S.dishes || force) S.dishes = (await api('/api/dishes')).dishes;
   return S.dishes;
 }
 async function eatView(query) {
   const cat = query.get('cat') || 'All';
-  const q = S.searchQ || '';
   view.innerHTML = `
-    <section class="space-y-4 lg:space-y-6">
-      <div class="relative lg:max-w-xl">
-        <label for="search" class="sr-only">Search dishes or cooks</label>
-        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm" aria-hidden="true"></i>
-        <input id="search" data-input="search" type="search" enterkeyhint="search" value="${esc(q)}" placeholder="Search dishes or cooks"
-          class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+    <section class="space-y-7 lg:space-y-10">
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1 lg:max-w-2xl">
+          <label for="search" class="sr-only">Search dishes, cooks or ingredients</label>
+          <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 text-lg" aria-hidden="true"></i>
+          <input id="search" data-input="search" type="search" enterkeyhint="search" value="${esc(S.searchQ || '')}" placeholder="Search dishes or cooks…"
+            class="w-full h-14 pl-14 pr-5 bg-slate-100 rounded-full text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white">
+        </div>
+        <button data-act="filters" class="relative w-14 h-14 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center shrink-0" aria-label="Filters and sorting">
+          <i class="fa-solid fa-sliders text-lg" aria-hidden="true"></i>
+          <span id="filterDot" class="${filtersActive() ? '' : 'hidden'} absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-brand-500 ring-2 ring-slate-900"></span>
+        </button>
       </div>
-      <div class="-mx-4 px-4 lg:mx-0 lg:px-0 flex gap-2 overflow-x-auto lg:overflow-visible lg:flex-wrap hide-scrollbar" role="tablist" aria-label="Categories">
-        ${['All', ...(S.config.categories || [])].map(c => `<a role="tab" aria-selected="${c === cat}" href="#/${c === 'All' ? '' : '?cat=' + encodeURIComponent(c)}"
-          class="px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap ${c === cat ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20' : 'bg-white text-slate-600 border border-slate-200'}">${esc(c)}</a>`).join('')}
+      <div id="trending"></div>
+      <div>
+        <div class="flex items-center justify-between mb-3"><h2 class="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">Browse categories</h2>${seeAll()}</div>
+        <div class="-mx-4 px-4 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto hide-scrollbar" role="tablist" aria-label="Categories">
+          ${['All', ...(S.config.categories || [])].map(c => `<a role="tab" aria-selected="${c === cat}" href="#/${c === 'All' ? '' : '?cat=' + encodeURIComponent(c)}"
+            class="shrink-0 w-[5.5rem] h-24 rounded-2xl flex flex-col items-center justify-center gap-2 text-center transition-colors ${c === cat ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'}">
+            <i class="fa-solid ${CAT_ICONS[c] || 'fa-utensils'} text-2xl" aria-hidden="true"></i><span class="text-xs font-bold leading-tight px-1">${esc(c)}</span></a>`).join('')}
+        </div>
       </div>
-      <div class="flex items-end justify-between">
-        <div><h1 class="text-lg lg:text-2xl font-bold lg:font-black text-slate-900">Cooking near you</h1><p class="text-[11px] text-slate-500">From cooks with a checked food handler permit</p></div>
-        <span id="dishCount" class="text-[11px] font-semibold text-slate-500"></span>
+      <div>
+        <div class="flex items-center justify-between mb-3"><h2 id="listTitle" class="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">Popular dishes</h2>${seeAll('seeAllBtn')}</div>
+        <div id="dishList" class="${cardGrid}">${skeletonCards(4)}</div>
       </div>
-      <div id="dishList" class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">${skeletonList(6)}</div>
     </section>`;
   await loadDishes();
+  renderTrending();
   renderDishList(cat);
+}
+
+function renderTrending() {
+  const box = $('#trending'); if (!box) return;
+  const top = [...S.dishes].filter(d => d.available)
+    .sort((a, b) => (b.popularity - a.popularity) || ((b.chef.rating.average || 0) - (a.chef.rating.average || 0)) || (!!b.imageUrl - !!a.imageUrl))
+    .slice(0, 3);
+  if (!top.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `
+    <div class="relative" aria-roledescription="carousel" aria-label="Trending dishes">
+      <div id="trendTrack" class="-mx-4 px-4 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto snap-x snap-mandatory hide-scrollbar scroll-px-4 lg:scroll-px-0">
+        ${top.map((d, i) => `
+        <article class="snap-center shrink-0 w-full relative h-60 lg:h-80 rounded-[1.75rem] overflow-hidden bg-slate-950 text-white" aria-roledescription="slide" aria-label="${i + 1} of ${top.length}">
+          ${d.imageUrl ? `<img src="${esc(d.imageUrl)}" alt="" class="absolute inset-y-0 right-0 w-[62%] h-full object-cover">`
+            : `<div class="absolute inset-y-0 right-0 w-[62%] bg-gradient-to-br from-brand-700 to-slate-900 flex items-center justify-center text-7xl text-white/20" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></div>`}
+          <div class="absolute inset-0 bg-gradient-to-r from-slate-950 from-35% via-slate-950/80 to-transparent" aria-hidden="true"></div>
+          <div class="relative h-full flex flex-col justify-center gap-3 p-5 lg:p-12 max-w-[68%] lg:max-w-[50%]">
+            <span class="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-600/30 text-xs font-bold"><i class="fa-solid fa-fire-flame-curved text-brand-400" aria-hidden="true"></i> Trending now</span>
+            <h2 class="text-[1.65rem] lg:text-5xl font-black leading-[1.1] tracking-tight line-clamp-2">${esc(d.title)}</h2>
+            <p class="text-sm lg:text-base text-slate-200 flex items-center gap-2 min-w-0">
+              ${d.prepTime ? `<span class="shrink-0"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${esc(d.prepTime)}</span><span class="text-slate-500" aria-hidden="true">|</span>` : ''}
+              <span class="truncate"><i class="fa-solid fa-kitchen-set" aria-hidden="true"></i> ${esc(d.chef.kitchenName)}</span></p>
+            <button data-act="dish" data-id="${d.id}" class="self-start h-12 px-6 rounded-full bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-brand-600/30">View dish <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i></button>
+          </div>
+        </article>`).join('')}
+      </div>
+      ${top.length > 1 ? `<div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2" aria-hidden="true">${top.map((_, i) => `<span data-dot="${i}" class="w-2.5 h-2.5 rounded-full transition-colors ${i ? 'bg-white/35' : 'bg-brand-500'}"></span>`).join('')}</div>` : ''}
+    </div>`;
+  const track = $('#trendTrack');
+  track.addEventListener('scroll', () => {
+    const slide = track.firstElementChild;
+    const i = Math.round(track.scrollLeft / (slide.offsetWidth + 12));
+    document.querySelectorAll('[data-dot]').forEach(dot => { dot.className = `w-2.5 h-2.5 rounded-full transition-colors ${Number(dot.dataset.dot) === i ? 'bg-brand-500' : 'bg-white/35'}`; });
+  }, { passive: true });
+}
+
+function filteredDishes(cat) {
+  const q = (S.searchQ || '').trim().toLowerCase(), f = S.filters;
+  const list = S.dishes.filter(d => (cat === 'All' || d.category === cat) &&
+    (!q || [d.title, d.description, d.chef.kitchenName, d.category, d.dietary, d.chef.cuisine].join(' ').toLowerCase().includes(q)) &&
+    (!f.dietary || d.dietary === f.dietary) && (!f.availableOnly || d.available));
+  const rating = d => d.chef.rating.average || 0;
+  const by = {
+    popular: (a, b) => (b.available - a.available) || (b.popularity - a.popularity) || (rating(b) - rating(a)),
+    rating: (a, b) => (rating(b) - rating(a)) || (b.chef.rating.count - a.chef.rating.count),
+    price: (a, b) => a.price - b.price,
+    quick: (a, b) => prepMinutes(a) - prepMinutes(b)
+  };
+  return list.sort(by[f.sort] || by.popular);
 }
 function renderDishList(cat = route().query.get('cat') || 'All') {
   const list = $('#dishList'); if (!list) return;
-  const q = (S.searchQ || '').toLowerCase();
-  const shown = S.dishes.filter(d => (cat === 'All' || d.category === cat) &&
-    (!q || d.title.toLowerCase().includes(q) || d.description.toLowerCase().includes(q) || d.chef.kitchenName.toLowerCase().includes(q)));
-  $('#dishCount').textContent = `${shown.length} dish${shown.length === 1 ? '' : 'es'}`;
+  const narrowed = !!(S.searchQ || '').trim() || cat !== 'All' || filtersActive();
+  const shown = filteredDishes(cat);
+  const limit = narrowed || S.showAll ? Infinity : 6;
+  $('#listTitle').textContent = (S.searchQ || '').trim() ? `Results for “${S.searchQ.trim()}”` : cat !== 'All' ? cat : narrowed ? 'Matching dishes' : 'Popular dishes';
+  $('#seeAllBtn').classList.toggle('hidden', limit === Infinity || shown.length <= 6);
+  $('#trending')?.classList.toggle('hidden', narrowed);
+  $('#filterDot')?.classList.toggle('hidden', !filtersActive());
   if (!S.dishes.length) {
-    list.innerHTML = stateCard('fa-kitchen-set', 'No kitchens open yet', 'Cooks in your area are getting set up. Know someone who makes the best tamales on the block? Invite them to cook on Chefy.',
-      `<button data-act="start-cooking" class="btn-dark mt-4">Cook on Chefy</button>`);
+    list.innerHTML = `<div class="col-span-full">${stateCard('fa-kitchen-set', 'No kitchens open yet', 'Cooks in your area are getting set up. Know someone who makes the best tamales on the block? Invite them to cook on Chefy.',
+      `<button data-act="start-cooking" class="btn-dark mt-4">Cook on Chefy</button>`)}</div>`;
     return;
   }
   if (!shown.length) {
-    list.innerHTML = stateCard('fa-magnifying-glass', 'Nothing matches that', 'Try another word or category.');
+    list.innerHTML = `<div class="col-span-full">${stateCard('fa-magnifying-glass', 'Nothing matches that', 'Try another word, category or filter.', filtersActive() ? `<button data-act="filter-reset" class="btn-ghost mt-4">Clear filters</button>` : '')}</div>`;
     return;
   }
-  list.innerHTML = shown.map(dishCard).join('');
+  list.innerHTML = shown.slice(0, limit).map(dishCard).join('');
+}
+
+function heartBtn(d, cls) {
+  return `<button data-act="save" data-id="${d.id}" aria-pressed="${!!d.saved}" aria-label="${d.saved ? 'Remove from saved' : 'Save'}: ${esc(d.title)}" class="${cls} rounded-full flex items-center justify-center">
+    <i class="${d.saved ? 'fa-solid text-rose-500' : 'fa-regular'} fa-heart" aria-hidden="true"></i></button>`;
 }
 function dishCard(d) {
   const inBasket = S.basket.items[d.id]?.qty || 0;
+  const r = d.chef.rating;
   return `
-  <article class="card p-3 flex gap-3 transition-shadow ${d.available ? '' : 'opacity-60'}">
-    <a href="#/chef/${d.chefId}" class="relative w-28 h-28 shrink-0 rounded-xl overflow-hidden" aria-label="${esc(d.chef.kitchenName)} menu">
-      ${dishImg(d.imageUrl, 'w-full h-full')}
-      ${d.prepTime ? `<span class="absolute bottom-1.5 left-1.5 bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md"><i class="fa-solid fa-clock text-brand-600" aria-hidden="true"></i> ${esc(d.prepTime)}</span>` : ''}
-    </a>
-    <div class="flex-1 min-w-0 flex flex-col">
-      <a href="#/chef/${d.chefId}" class="flex items-center gap-1.5 text-[11px] text-slate-500">
-        ${avatar(d.chef.avatarUrl, d.chef.kitchenName, 'w-4 h-4 rounded-full text-[7px]')}
-        <span class="font-semibold text-slate-700 truncate">${esc(d.chef.kitchenName)}</span>
-        <i class="fa-solid fa-circle-check text-emerald-600 text-[10px]" aria-label="Verified permit"></i>
-      </a>
-      <h3 class="mt-1 font-bold text-slate-900 text-sm leading-snug line-clamp-2">${esc(d.title)}</h3>
-      <p class="text-[11px] text-slate-500 mt-0.5 truncate">${stars(d.chef.rating.average, d.chef.rating.count)}${d.dietary ? ' · ' + esc(d.dietary) : ''}</p>
-      <div class="mt-auto pt-2 flex items-center justify-between">
-        <span class="text-base font-black text-slate-900">${money(d.price)}</span>
-        ${!d.available ? `<span class="text-[11px] font-bold text-slate-500">Sold out today</span>` : inBasket ? stepper(d.id, inBasket) :
-          `<button data-act="add" data-id="${d.id}" class="h-11 px-4 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center gap-1.5" aria-label="Add ${esc(d.title)}"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add</button>`}
+  <article class="card overflow-hidden flex flex-col transition-shadow ${d.available ? '' : 'opacity-70'}">
+    <div class="relative aspect-[4/3] bg-slate-100">
+      <button data-act="dish" data-id="${d.id}" class="absolute inset-0 w-full h-full" aria-label="View ${esc(d.title)}">${dishImg(d.imageUrl, 'w-full h-full')}</button>
+      ${heartBtn(d, 'absolute top-2 right-2 w-10 h-10 bg-black/30 hover:bg-black/45 backdrop-blur-sm text-white text-lg')}
+      ${!d.available ? `<span class="absolute bottom-2 left-2 chip bg-white/95 text-slate-700">Sold out today</span>` : ''}
+    </div>
+    <div class="p-3 lg:p-4 flex-1 flex flex-col gap-1.5">
+      <h3 class="font-bold text-slate-900 text-[15px] lg:text-base leading-snug line-clamp-2"><button data-act="dish" data-id="${d.id}" class="text-left hover:text-brand-700">${esc(d.title)}</button></h3>
+      <p class="text-xs text-slate-500 flex items-center gap-1.5 min-w-0">
+        ${d.prepTime ? `<span class="shrink-0"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${esc(d.prepTime)}</span><span class="text-slate-300" aria-hidden="true">|</span>` : ''}
+        <a href="#/chef/${d.chefId}" class="truncate hover:text-brand-700">${esc(d.chef.kitchenName)}</a></p>
+      <div><span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-xs font-bold text-slate-800">${r.count ? `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${r.average.toFixed(1)}<span class="sr-only"> stars</span>` : 'New cook'}</span></div>
+      <div class="mt-auto pt-1.5 flex items-center justify-between gap-2">
+        <span class="text-base lg:text-lg font-black text-slate-900">${money(d.price)}</span>
+        ${!d.available ? '' : inBasket ? stepperSm(d.id, inBasket) :
+          `<button data-act="add" data-id="${d.id}" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center shadow-md shadow-brand-600/25" aria-label="Add ${esc(d.title)} to basket"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>`}
       </div>
     </div>
   </article>`;
@@ -347,16 +429,121 @@ const stepper = (id, qty) => `
     <span class="text-sm font-black text-brand-700 w-5 text-center" aria-live="polite">${qty}</span>
     <button data-act="qty" data-id="${id}" data-d="1" class="w-10 h-10 rounded-lg text-brand-700 font-black" aria-label="Add one">+</button>
   </div>`;
+const stepperSm = (id, qty) => `
+  <div class="flex items-center bg-brand-600 text-white rounded-full h-11 px-0.5">
+    <button data-act="qty" data-id="${id}" data-d="-1" class="w-9 h-10 rounded-full font-black" aria-label="Remove one">−</button>
+    <span class="text-sm font-black w-4 text-center" aria-live="polite">${qty}</span>
+    <button data-act="qty" data-id="${id}" data-d="1" class="w-9 h-10 rounded-full font-black" aria-label="Add one">+</button>
+  </div>`;
 
 function findDish(id) {
-  return (S.dishes || []).find(d => d.id === id) || (S.chefPage?.dishes || []).find(d => d.id === id);
+  return (S.dishes || []).find(d => d.id === id) || (S.chefPage?.dishes || []).find(d => d.id === id) || (S.savedList || []).find(d => d.id === id);
 }
+
+// Dish details panel ("View dish")
+async function openDish(id) {
+  let d = findDish(id);
+  if (!d) { await loadDishes(); d = findDish(id); }
+  if (!d) return toast('That dish is no longer listed.');
+  const c = d.chef, r = c.rating;
+  openSheet(`
+    <div class="relative">
+      ${dishImg(d.imageUrl, 'w-full aspect-[4/3] lg:aspect-[16/10]')}
+      <button data-act="close-sheet" class="absolute top-3 right-3 w-11 h-11 rounded-full bg-white/95 text-slate-900 shadow flex items-center justify-center" aria-label="Close"><i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i></button>
+      ${heartBtn(d, 'absolute top-3 left-3 w-11 h-11 bg-white/95 text-slate-900 shadow text-lg')}
+    </div>
+    <div class="p-5 space-y-4">
+      <div>
+        <p class="text-xs font-bold text-brand-700 uppercase tracking-wide">${esc(d.category)}${d.dietary ? ' · ' + esc(d.dietary) : ''}</p>
+        <h2 class="text-2xl font-black text-slate-900 leading-tight mt-1">${esc(d.title)}</h2>
+        <p class="text-sm text-slate-500 mt-2 flex items-center gap-2 flex-wrap">
+          ${d.prepTime ? `<span><i class="fa-regular fa-clock" aria-hidden="true"></i> Ready in ${esc(d.prepTime)}</span><span class="text-slate-300" aria-hidden="true">|</span>` : ''}
+          <span>${r.count ? `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${r.average.toFixed(1)} (${r.count} review${r.count === 1 ? '' : 's'})` : 'New cook'}</span></p>
+      </div>
+      <a href="#/chef/${d.chefId}" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200">
+        ${avatar(c.avatarUrl, c.kitchenName, 'w-12 h-12 rounded-xl')}
+        <span class="flex-1 min-w-0"><span class="block text-sm font-bold text-slate-900 truncate">${esc(c.kitchenName)}</span>
+          <span class="block text-xs text-slate-500 truncate"><i class="fa-solid fa-shield-halved text-emerald-600" aria-hidden="true"></i> Permit checked${c.neighborhood ? ' · ' + esc(c.neighborhood) : ''}</span></span>
+        <i class="fa-solid fa-chevron-right text-slate-400" aria-hidden="true"></i></a>
+      ${d.description ? `<p class="text-[15px] text-slate-700 leading-relaxed">${esc(d.description)}</p>` : ''}
+      <p class="text-xs text-slate-500"><i class="fa-solid fa-person-walking" aria-hidden="true"></i> Pickup${c.offersDelivery ? ' or local delivery' : ' only'} · address shown after you order</p>
+      ${d.available ? `<button data-act="add-close" data-id="${d.id}" class="btn-primary !rounded-full !py-4 text-base"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add to basket · ${money(d.price)}</button>`
+        : `<p class="p-3 rounded-xl bg-slate-100 text-sm font-semibold text-slate-600 text-center">Sold out today. Save it and check back tomorrow.</p>`}
+    </div>`, d.title);
+}
+
+async function toggleSave(id) {
+  requireAuth(async () => {
+    const d = findDish(id);
+    const next = !(d && d.saved);
+    try {
+      await api(`/api/saved/${id}`, { method: 'POST', body: { saved: next } });
+      for (const list of [S.dishes, S.chefPage?.dishes, S.savedList]) (list || []).forEach(x => { if (x.id === id) x.saved = next; });
+      document.querySelectorAll(`[data-act="save"][data-id="${id}"]`).forEach(b => {
+        b.setAttribute('aria-pressed', String(next));
+        b.innerHTML = `<i class="${next ? 'fa-solid text-rose-500' : 'fa-regular'} fa-heart" aria-hidden="true"></i>`;
+      });
+      toast(next ? 'Saved' : 'Removed from saved');
+      if (route().parts[0] === 'saved' && !$('#sheetRoot').firstChild) render();
+    } catch (e) { toast(e.message); }
+  }, 'Sign in to save dishes you love.');
+}
+
+function openFilters() {
+  openSheet(`<div id="filterSheet"></div>`, 'Filters and sorting');
+  renderFilterSheet();
+}
+function renderFilterSheet() {
+  const box = $('#filterSheet'); if (!box) return;
+  const f = S.filters, cat = route().query.get('cat') || 'All';
+  const chip = (on, attrs, label) => `<button ${attrs} aria-pressed="${on}" class="h-11 px-4 rounded-full text-sm font-bold ${on ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}">${label}</button>`;
+  const count = S.dishes ? filteredDishes(cat).length : 0;
+  box.innerHTML = sheetHeader('Filters & sorting') + `
+    <div class="p-5 space-y-6">
+      <fieldset><legend class="label mb-2">Category</legend><div class="flex flex-wrap gap-2">
+        ${['All', ...S.config.categories].map(c => `<a href="#/${c === 'All' ? '' : '?cat=' + encodeURIComponent(c)}" aria-current="${c === cat}" class="h-11 px-4 rounded-full text-sm font-bold flex items-center gap-2 ${c === cat ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}"><i class="fa-solid ${CAT_ICONS[c] || 'fa-utensils'}" aria-hidden="true"></i>${esc(c)}</a>`).join('')}</div></fieldset>
+      <fieldset><legend class="label mb-2">Sort by</legend><div class="flex flex-wrap gap-2">
+        ${Object.entries(SORTS).map(([k, l]) => chip(f.sort === k, `data-act="filter-sort" data-v="${k}"`, l)).join('')}</div></fieldset>
+      <fieldset><legend class="label mb-2">Dietary</legend><div class="flex flex-wrap gap-2">
+        ${['', ...S.config.dietary].map(v => chip(f.dietary === v, `data-act="filter-diet" data-v="${esc(v)}"`, v ? esc(v) : 'Any')).join('')}</div></fieldset>
+      <label class="flex items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+        <span><span class="block text-sm font-bold text-slate-900">Available today only</span><span class="block text-xs text-slate-500">Hide dishes that are sold out</span></span>
+        <input type="checkbox" data-change="filter-avail" ${f.availableOnly ? 'checked' : ''} class="w-6 h-6 accent-blue-600"></label>
+      <div class="grid grid-cols-2 gap-3">
+        <button data-act="filter-reset" class="btn-ghost !rounded-full">Reset</button>
+        <button data-act="close-sheet" class="btn-primary !rounded-full">Show ${count} dish${count === 1 ? '' : 'es'}</button>
+      </div>
+    </div>`;
+}
+function setFilters(patch) {
+  S.filters = { ...S.filters, ...patch };
+  store.set('chefy_filters', S.filters);
+  renderFilterSheet();
+  renderDishList();
+}
+
+// ============ saved ============
+const SAVED_HEAD = `<div class="flex items-end justify-between mb-4"><h1 class="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Saved</h1></div>`;
+async function savedView() {
+  const head = SAVED_HEAD;
+  if (!S.me.user) { view.innerHTML = head + signInPrompt('Keep the dishes you love', 'Tap the heart on any dish to save it here, so you can order it again in two taps.'); return; }
+  view.innerHTML = head + `<div class="${cardGrid}">${skeletonCards(4)}</div>`;
+  S.savedList = (await api('/api/saved')).dishes;
+  renderSaved(head);
+}
+function renderSaved(head = SAVED_HEAD) {
+  if (route().parts[0] !== 'saved') return;
+  view.innerHTML = head + (S.savedList.length
+    ? `<div id="savedGrid" class="${cardGrid}">${S.savedList.map(dishCard).join('')}</div>`
+    : stateCard('fa-heart', 'Nothing saved yet', 'Tap the heart on a dish and it lands here, so you can order it again in two taps.', `<a href="#/" class="btn-dark mt-4">Find something to eat</a>`));
+}
+
 function addToBasket(id) {
   const d = findDish(id);
   if (!d) return;
   const chef = d.chef || S.chefPage?.chef;
   if (S.basket.chefId && S.basket.chefId !== d.chefId && basketCount() > 0) {
-    if (!confirm(`Start a new basket? Your basket has food from ${S.basket.chefName}. Orders come from one kitchen at a time.`)) return;
+    if (!confirm(`Start a new basket? Your basket has food from ${S.basket.chefName}. Orders come from one kitchen at a time.`)) return false;
     S.basket = emptyBasket();
   }
   S.basket.chefId = d.chefId;
@@ -368,6 +555,7 @@ function addToBasket(id) {
   if (navigator.vibrate) navigator.vibrate(10);
   toast(`Added ${d.title.length > 30 ? d.title.slice(0, 30) + '…' : d.title}`);
   refreshShopLists();
+  return true;
 }
 function changeQty(id, delta) {
   const it = S.basket.items[id]; if (!it) return;
@@ -381,6 +569,7 @@ function changeQty(id, delta) {
 function refreshShopLists() {
   if ($('#dishList')) renderDishList();
   if ($('#chefMenu')) renderChefMenu();
+  if ($('#savedGrid')) renderSaved();
 }
 
 // ============ cook page ============
@@ -390,7 +579,7 @@ async function chefView(id) {
   const { chef, reviews } = S.chefPage;
   S.chefPage.dishes.forEach(d => { d.chef = chef; });
   view.innerHTML = `
-    <div class="relative -mx-4 -mt-4 h-40 lg:mx-0 lg:mt-0 lg:h-64 lg:rounded-3xl overflow-hidden bg-gradient-to-br from-amber-200 to-brand-300">
+    <div class="relative -mx-4 -mt-4 h-40 lg:mx-0 lg:mt-0 lg:h-64 lg:rounded-3xl overflow-hidden bg-gradient-to-br from-brand-100 to-brand-300">
       ${chef.coverUrl ? `<img src="${esc(chef.coverUrl)}" alt="" class="w-full h-full object-cover">` : ''}
       <a href="#/" class="absolute top-3 left-3 w-11 h-11 rounded-full bg-white/90 flex items-center justify-center text-slate-800 shadow" aria-label="Back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></a>
     </div>
@@ -414,7 +603,7 @@ async function chefView(id) {
       </div>
       <div class="space-y-4 lg:pt-20">
       <h2 class="text-base lg:text-xl font-bold text-slate-900">Menu</h2>
-      <div id="chefMenu" class="grid gap-3 lg:grid-cols-2"></div>
+      <div id="chefMenu" class="grid grid-cols-2 gap-3 lg:gap-5"></div>
       <h2 class="text-base font-bold text-slate-900 pt-2">Reviews</h2>
       ${reviews.length ? reviews.map(r => `
         <div class="card p-3.5">
@@ -431,7 +620,7 @@ function renderChefMenu() {
   const box = $('#chefMenu'); if (!box || !S.chefPage) return;
   const ds = S.chefPage.dishes;
   box.innerHTML = ds.length ? ds.map(d => S.chefPage.chef.live ? dishCard(d) : dishCard({ ...d, available: false })).join('')
-    : `<p class="text-sm text-slate-500">This kitchen hasn't listed any dishes yet.</p>`;
+    : `<p class="col-span-full text-sm text-slate-500">This kitchen hasn't listed any dishes yet.</p>`;
 }
 
 // ============ basket & checkout ============
@@ -508,7 +697,7 @@ async function openPaymentSheet(order, clientSecret) {
   const stripeMode = S.config.payments.mode === 'stripe';
   openSheet(sheetHeader('Pay securely', `Order ${esc(order.code)} · ${esc(order.chef.kitchenName)}`) + `
     <form data-form="pay" class="p-5 space-y-4" novalidate>
-      <div class="p-4 rounded-2xl bg-amber-50 border border-amber-100">
+      <div class="p-4 rounded-2xl bg-brand-50 border border-brand-100">
         <div class="flex items-center justify-between"><span class="text-xs font-semibold text-slate-600">Amount held today</span><span class="text-2xl font-black text-slate-900">${money(order.total)}</span></div>
         <p class="text-[11px] text-slate-600 mt-1">Charged only when the cook marks your order ready. Released if they decline.</p>
       </div>
@@ -537,7 +726,7 @@ async function openPaymentSheet(order, clientSecret) {
   if (stripeMode) {
     try {
       await loadStripe();
-      S.elements = S.stripe.elements({ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#ea580c', borderRadius: '12px', fontFamily: 'Inter, system-ui, sans-serif' } } });
+      S.elements = S.stripe.elements({ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#006be6', borderRadius: '12px', fontFamily: 'Inter, system-ui, sans-serif' } } });
       const pe = S.elements.create('payment', { layout: 'tabs' });
       pe.mount('#payment-element');
       pe.on('ready', () => { const b = $('form[data-form="pay"] button[type="submit"]'); if (b) b.disabled = false; });
@@ -846,10 +1035,10 @@ function payoutsTab(sum) {
   return `
     <div class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[24rem_1fr] lg:gap-6 lg:items-start">
       <div class="space-y-4">
-      <div class="rounded-2xl p-5 lg:p-6 bg-gradient-to-br from-slate-900 to-amber-950 text-white">
+      <div class="rounded-2xl p-5 lg:p-6 bg-gradient-to-br from-slate-900 to-brand-950 text-white">
         <p class="text-xs font-semibold text-slate-300">Available to cash out</p>
         <p class="text-3xl font-black mt-1">${money(b.available)}</p>
-        <p class="text-[11px] text-amber-200 mt-1">${money(b.held)} more is held on customers' cards for orders in progress.</p>
+        <p class="text-[11px] text-brand-200 mt-1">${money(b.held)} more is held on customers' cards for orders in progress.</p>
       </div>
       ${c.payouts.ready ? `
       <div class="grid grid-cols-2 gap-2">
@@ -990,7 +1179,7 @@ async function setupView(query) {
         <div><label class="label" for="kHood">Neighborhood</label><input id="kHood" name="neighborhood" maxlength="60" value="${esc(c?.neighborhood || S.me.user.neighborhood || '')}" class="field" placeholder="e.g. Mission District"></div>
         <div><label class="label" for="kAddr">Pickup address</label><input id="kAddr" name="pickupAddress" required autocomplete="street-address" maxlength="200" value="${esc(c?.pickupAddress || '')}" class="field" placeholder="Street and number"></div>
         <div><label class="label" for="kNotes">Pickup instructions <span class="font-normal text-slate-400">(optional)</span></label><input id="kNotes" name="pickupNotes" maxlength="300" value="${esc(c?.pickupNotes || '')}" class="field" placeholder="e.g. Ring #2, I'll come down. Pickup 4–7pm."></div>
-        <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 text-sm"><input type="checkbox" name="offersDelivery" ${c?.offersDelivery ? 'checked' : ''} class="w-5 h-5 accent-orange-600"> I can deliver nearby myself</label>
+        <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 text-sm"><input type="checkbox" name="offersDelivery" ${c?.offersDelivery ? 'checked' : ''} class="w-5 h-5 accent-blue-600"> I can deliver nearby myself</label>
         ${errorBox()}
         <button class="btn-primary" type="submit">${c ? 'Save' : 'Save and continue'}</button>
       </form>`;
@@ -1123,6 +1312,15 @@ const ACT = {
   'close-sheet': () => closeSheet(),
   'open-basket': () => openBasket(),
   'add': el => addToBasket(Number(el.dataset.id)),
+  'add-close': el => { if (addToBasket(Number(el.dataset.id)) !== false) closeSheet(); },
+  'dish': el => openDish(Number(el.dataset.id)),
+  'save': el => toggleSave(Number(el.dataset.id)),
+  'fab': () => (S.me.chef ? openDishSheet() : openBasket()),
+  'filters': () => openFilters(),
+  'see-all': () => { S.showAll = true; renderDishList(); },
+  'filter-sort': el => setFilters({ sort: el.dataset.v }),
+  'filter-diet': el => setFilters({ dietary: el.dataset.v }),
+  'filter-reset': () => setFilters({ ...DEFAULT_FILTERS }),
   'qty': el => changeQty(Number(el.dataset.id), Number(el.dataset.d)),
   'fulfill': el => { S.basket.fulfillment = el.dataset.v; saveBasket(); renderBasketSheet(); },
   'tip': el => { S.basket.tip = Number(el.dataset.v); saveBasket(); renderBasketSheet(); },
@@ -1162,7 +1360,7 @@ const ACT = {
   'dish-edit': el => openDishSheet(el.dataset.id),
   'dish-delete': async el => {
     if (!confirm('Remove this dish from your menu?')) return;
-    try { await api(`/api/chef/dishes/${el.dataset.id}`, { method: 'DELETE' }); S.dishes = null; closeSheet(true); toast('Dish removed'); render(); } catch (e) { toast(e.message); }
+    try { await api(`/api/chef/dishes/${el.dataset.id}`, { method: 'DELETE', body: {} }); S.dishes = null; closeSheet(true); toast('Dish removed'); render(); } catch (e) { toast(e.message); }
   },
   'payout': async el => {
     const instant = el.dataset.instant === '1';
@@ -1285,6 +1483,8 @@ document.addEventListener('change', async e => {
     const label = $('#permitFileLabel'); label.textContent = 'Uploading…';
     try { const r = await upload(el.files[0], 'permit'); $('#permitFile').value = r.file; label.textContent = `Attached: ${el.files[0].name}`; }
     catch (err) { label.textContent = 'Take a photo or choose a file'; toast(err.message); }
+  } else if (k === 'filter-avail') {
+    setFilters({ availableOnly: el.checked });
   } else if (k === 'dish-available') {
     try { await api(`/api/chef/dishes/${el.dataset.id}`, { method: 'PATCH', body: { available: el.checked } }); S.dishes = null; toast(el.checked ? 'Dish available' : 'Marked sold out'); render(); }
     catch (err) { el.checked = !el.checked; toast(err.message); }

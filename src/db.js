@@ -120,6 +120,13 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS saved_dishes (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, dish_id)
+);
+
 CREATE TABLE IF NOT EXISTS payouts (
   id INTEGER PRIMARY KEY,
   chef_id INTEGER NOT NULL REFERENCES chefs(user_id),

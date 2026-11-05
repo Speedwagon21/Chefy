@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-amber-50/40">
+<html lang="en" class="bg-white">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -18,23 +18,21 @@
   <link rel="stylesheet" href="/vendor/fa/css/all.min.css">
   <link rel="stylesheet" href="/app.css">
 </head>
-<body class="min-h-dvh text-slate-800 antialiased bg-amber-50/40">
+<body class="min-h-dvh text-slate-800 antialiased bg-white">
 
-  <header class="sticky top-0 z-40 glass safe-top border-b border-amber-100">
-    <div class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 h-14 lg:h-16 flex items-center justify-between gap-2">
+  <header class="sticky top-0 z-40 glass safe-top">
+    <div class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 h-[4.5rem] lg:h-20 flex items-center justify-between gap-2">
       <a href="#/" class="flex items-center gap-2.5" aria-label="Chefy home">
-        <span class="w-9 h-9 bg-gradient-to-tr from-brand-600 to-brand-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-brand-500/30">
-          <i class="fa-solid fa-utensils" aria-hidden="true"></i>
-        </span>
-        <span id="headerTitle" class="text-lg font-black tracking-tight text-slate-900">Chefy</span>
+        <img src="/logo.svg" alt="" class="h-10 w-auto" width="46" height="40">
+        <span class="text-[1.85rem] font-black tracking-tight text-slate-900 leading-none">Chefy</span>
       </a>
       <nav class="hidden lg:flex items-center gap-1 ml-6 mr-auto" aria-label="Main">
-        <a href="#/" data-nav="eat" class="nav-top"><i class="fa-solid fa-house" aria-hidden="true"></i> Eat</a>
+        <a href="#/" data-nav="eat" class="nav-top"><i class="fa-solid fa-house" aria-hidden="true"></i> Home</a>
         <a href="#/orders" data-nav="orders" class="nav-top relative"><i class="fa-solid fa-receipt" aria-hidden="true"></i> Orders
           <span id="ordersDotD" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full"></span></a>
+        <a href="#/saved" data-nav="saved" class="nav-top"><i class="fa-regular fa-bookmark" aria-hidden="true"></i> Saved</a>
         <a href="#/kitchen" data-nav="kitchen" class="nav-top"><i class="fa-solid fa-kitchen-set" aria-hidden="true"></i> Kitchen
           <span id="kitchenBadgeD" class="hidden min-w-[1.25rem] h-5 px-1 bg-brand-600 text-white text-[11px] font-bold rounded-full items-center justify-center">0</span></a>
-        <a href="#/account" data-nav="account" class="nav-top"><i class="fa-solid fa-circle-user" aria-hidden="true"></i> Account</a>
       </nav>
       <div id="headerRight" class="flex items-center gap-2"></div>
     </div>
@@ -42,8 +40,8 @@
 
   <main id="view" class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 pt-4 lg:pt-8 pb-nav" tabindex="-1"></main>
 
-  <div id="basketBar" class="hidden lg:!hidden fixed z-30 left-1/2 -translate-x-1/2 w-full max-w-md px-3" style="bottom: calc(4.75rem + env(safe-area-inset-bottom));">
-    <button data-act="open-basket" class="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-brand-600 active:bg-brand-700 text-white rounded-2xl shadow-xl shadow-brand-600/30">
+  <div id="basketBar" class="hidden lg:!hidden fixed z-30 left-1/2 -translate-x-1/2 w-full max-w-md px-3" style="bottom: calc(6.25rem + env(safe-area-inset-bottom));">
+    <button data-act="open-basket" class="w-full flex items-center justify-between gap-3 px-5 py-3.5 bg-slate-900 active:bg-slate-800 text-white rounded-full shadow-xl shadow-slate-900/25">
       <span class="flex items-center gap-2.5">
         <span id="basketBarCount" class="min-w-[1.5rem] h-6 px-1.5 bg-white/25 rounded-lg text-xs font-black flex items-center justify-center">0</span>
         <span class="text-sm font-bold">View basket</span>
@@ -52,23 +50,29 @@
     </button>
   </div>
 
-  <nav class="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md bg-white/95 border-t border-slate-200 safe-bottom" aria-label="Main tabs">
-    <div class="grid grid-cols-4 h-16">
-      <a href="#/" data-nav="eat" class="nav-btn flex flex-col items-center justify-center gap-1">
-        <i class="fa-solid fa-house text-lg" aria-hidden="true"></i><span class="text-[11px] font-bold">Eat</span>
+  <nav class="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md bg-white border-t border-slate-200 rounded-t-3xl shadow-[0_-4px_20px_rgba(15,23,42,0.06)] safe-bottom" aria-label="Main tabs">
+    <div class="grid grid-cols-5 h-[4.75rem] items-center">
+      <a href="#/" data-nav="eat" class="nav-btn h-full flex flex-col items-center justify-center gap-1">
+        <i class="fa-solid fa-house text-[22px]" aria-hidden="true"></i><span class="text-xs font-bold">Home</span>
       </a>
-      <a href="#/orders" data-nav="orders" class="nav-btn relative flex flex-col items-center justify-center gap-1">
-        <span class="relative"><i class="fa-solid fa-receipt text-lg" aria-hidden="true"></i>
+      <a href="#/orders" data-nav="orders" class="nav-btn h-full flex flex-col items-center justify-center gap-1">
+        <span class="relative"><i class="fa-regular fa-calendar-check text-[22px]" aria-hidden="true"></i>
           <span id="ordersDot" class="hidden absolute -top-1 -right-2 w-2.5 h-2.5 bg-brand-500 rounded-full border-2 border-white"></span></span>
-        <span class="text-[11px] font-bold">Orders</span>
+        <span class="text-xs font-bold">Orders</span>
       </a>
-      <a href="#/kitchen" data-nav="kitchen" class="nav-btn relative flex flex-col items-center justify-center gap-1">
-        <span class="relative"><i class="fa-solid fa-kitchen-set text-lg" aria-hidden="true"></i>
+      <div class="flex justify-center">
+        <button id="fab" data-act="fab" class="relative -mt-9 w-[4.25rem] h-[4.25rem] rounded-full bg-brand-500 active:bg-brand-600 text-white text-[1.7rem] shadow-lg shadow-brand-500/40 ring-[5px] ring-white flex items-center justify-center" aria-label="Basket">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          <span id="fabBadge" class="hidden absolute -top-0.5 -right-0.5 min-w-[1.4rem] h-[1.4rem] px-1 bg-slate-900 text-white text-[11px] font-bold rounded-full items-center justify-center ring-2 ring-white">0</span>
+        </button>
+      </div>
+      <a href="#/saved" data-nav="saved" class="nav-btn h-full flex flex-col items-center justify-center gap-1">
+        <i class="fa-regular fa-bookmark text-[22px]" aria-hidden="true"></i><span class="text-xs font-bold">Saved</span>
+      </a>
+      <a href="#/kitchen" data-nav="kitchen" class="nav-btn h-full flex flex-col items-center justify-center gap-1">
+        <span class="relative"><i class="fa-solid fa-kitchen-set text-[22px]" aria-hidden="true"></i>
           <span id="kitchenBadge" class="hidden absolute -top-2 -right-3 min-w-[1.15rem] h-[1.15rem] px-1 bg-brand-600 text-white text-[10px] font-bold rounded-full items-center justify-center border-2 border-white">0</span></span>
-        <span class="text-[11px] font-bold">Kitchen</span>
-      </a>
-      <a href="#/account" data-nav="account" class="nav-btn flex flex-col items-center justify-center gap-1">
-        <i class="fa-solid fa-circle-user text-lg" aria-hidden="true"></i><span class="text-[11px] font-bold">Account</span>
+        <span class="text-xs font-bold">Kitchen</span>
       </a>
     </div>
   </nav>

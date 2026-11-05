@@ -143,6 +143,26 @@ test('full order lifecycle with held payment, review, refund and payout', async 
   await cook('PATCH', `/api/chef/dishes/${dish.body.dish.id}`, { available: false });
   assert.equal((await eater('POST', '/api/orders', { items: [{ dishId: dish.body.dish.id, qty: 1 }], fulfillment: 'pickup', tipPercent: 0 })).status, 409);
 
+  // saved dishes and popularity
+  assert.equal((await stranger('POST', `/api/saved/${dish.body.dish.id}`, { saved: true })).status, 200);
+  assert.equal((await stranger('GET', '/api/saved')).body.dishes.length, 1);
+  assert.equal((await stranger('GET', '/api/saved')).body.dishes[0].available, false, 'sold out dish shows as unavailable');
+  assert.equal((await cook('GET', '/api/saved')).body.dishes.length, 0, 'saved lists are per user');
+  await stranger('POST', `/api/saved/${dish.body.dish.id}`, { saved: false });
+  assert.equal((await stranger('GET', '/api/saved')).body.dishes.length, 0);
+  assert.equal((await stranger('POST', '/api/saved/99999', { saved: true })).status, 404);
+  assert.equal((await fetch(base + '/api/saved')).status, 401);
+  await cook('PATCH', `/api/chef/dishes/${dish.body.dish.id}`, { available: true });
+  assert.equal((await stranger('GET', '/api/dishes')).body.dishes[0].popularity, 0, 'refunded and declined orders do not count');
+  const pop = await eater('POST', '/api/orders', { items: [{ dishId: dish.body.dish.id, qty: 3 }], fulfillment: 'pickup', tipPercent: 0 });
+  await eater('POST', `/api/orders/${pop.body.order.code}/confirm`, { demoCard: { brand: 'Visa', last4: '4242' } });
+  assert.equal((await stranger('GET', '/api/dishes')).body.dishes[0].popularity, 3, 'popularity counts paid quantities');
+
+  // cooks can remove a dish (DELETE with a JSON body)
+  const extra = await cook('POST', '/api/chef/dishes', { title: 'Extra', category: 'Other', price: 5, description: 'x' });
+  assert.equal((await cook('DELETE', `/api/chef/dishes/${extra.body.dish.id}`, {})).status, 200);
+  assert.equal((await cook('GET', '/api/chef/dishes')).body.dishes.some(x => x.id === extra.body.dish.id), false);
+
   // sign out ends the session
   await eater('POST', '/api/auth/logout', {});
   assert.equal((await eater('GET', '/api/orders')).status, 401);

@@ -8,13 +8,13 @@ input, select, textarea { font-size: 16px !important; } /* stops iOS zoom on foc
 button { touch-action: manipulation; }
 button:active:not(:disabled) { transform: scale(0.97); }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, label:focus-within {
-  outline: 2px solid #ea580c; outline-offset: 2px;
+  outline: 2px solid #006be6; outline-offset: 2px;
 }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .safe-top { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-.pb-nav { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+.pb-nav { padding-bottom: calc(8.5rem + env(safe-area-inset-bottom)); }
 .glass { background: rgba(255,255,255,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 
 .sheet-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(15,23,42,.55); backdrop-filter: blur(2px); }
@@ -32,7 +32,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .nav-btn { color: #64748b; }
 .nav-top { @apply h-10 px-3.5 rounded-xl text-sm font-bold text-slate-600 flex items-center gap-2 hover:bg-slate-100 hover:text-slate-900; }
 .nav-top[aria-current="page"] { @apply bg-brand-50 text-brand-700; }
-#toast { bottom: calc(9.5rem + env(safe-area-inset-bottom)); }
+#toast { bottom: calc(10.5rem + env(safe-area-inset-bottom)); }
 
 @media (min-width: 1024px) {
   .pb-nav { padding-bottom: 4rem; }
@@ -48,12 +48,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   @keyframes panel-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 }
 @media (hover: hover) {
-  .btn-primary:hover:not(:disabled) { background: #c2410c; }
+  .btn-primary:hover:not(:disabled) { background: #0057c2; }
   .btn-dark:hover:not(:disabled) { background: #1e293b; }
   .btn-ghost:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
   a.card:hover, article.card:hover { box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 6px 18px rgba(15,23,42,.08); }
 }
-.nav-btn[aria-current="page"] { color: #c2410c; }
+.nav-btn[aria-current="page"] { color: #006be6; }
 
 .field { @apply w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent; }
 .label { @apply block text-xs font-bold text-slate-700 mb-1; }

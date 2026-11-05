@@ -3,7 +3,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: { 50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa', 300: '#fdba74', 400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c', 800: '#9a3412', 900: '#7c2d12', 950: '#431407' }
+        brand: { 50: '#eef6ff', 100: '#d9eaff', 200: '#bcdaff', 300: '#8ec3ff', 400: '#4aa6ff', 500: '#0992fe', 600: '#006be6', 700: '#0057c2', 800: '#00489f', 900: '#063c80', 950: '#06244d' }
       },
       fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
     }
