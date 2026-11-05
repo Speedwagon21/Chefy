@@ -1,0 +1,10 @@
+{
+  "name": "Chefy",
+  "short_name": "Chefy",
+  "description": "Homemade food from verified home cooks in your neighborhood.",
+  "start_url": "/#/",
+  "display": "standalone",
+  "background_color": "#fffbeb",
+  "theme_color": "#ffffff",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

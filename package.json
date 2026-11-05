@@ -1,0 +1,24 @@
+{
+  "name": "chefy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chefy: homemade food from verified neighborhood cooks. Phone-first web app with accounts, orders, held card payments and cook payouts.",
+  "main": "server.js",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch server.js",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "build:css": "tailwindcss -c tailwind.config.js -i src/app.css -o public/app.css --minify",
+    "build": "npm run build:css",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "6.5.2",
+    "express": "5.1.0",
+    "stripe": "17.7.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}
