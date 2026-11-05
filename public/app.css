@@ -15,6 +15,9 @@
 
 /* Hallmark · dismissed 74: the palette class names are the brand token families (slate, brand, emerald) mapped to rgb(var(--*)) */
 
+/* Hallmark · sweep: Floor 0 open FAIL (3 dismissed as sandbox artifacts: 76 x3) · Reflex 0 open (39b on the file render only) · before 197 FAIL 11 REFLEX
+ * finish-review: subagent · 8 findings · 7 resolved, 1 partial then resolved (toast docked inside the header bar) · plus stat strip checked (no page overflow, gutter as scroll padding) · gap: none */
+
 :root {
   --space-3xs: 2px;
   --space-2xs: 4px;
@@ -1635,6 +1638,10 @@ video {
   white-space: nowrap;
 }
 
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
 .rounded-2xl {
   border-radius: 12px;
 }
@@ -2770,8 +2777,10 @@ h1, h2, h3, .font-display {
 }
 
 #toast {
-  top: calc(env(safe-area-inset-top) + 5rem);
+  top: calc(env(safe-area-inset-top) + var(--space-xs));
 }
+
+/* docked inside the header bar: covers no running content */
 
 @media (min-width: 1024px) and (pointer: coarse) {
   .nav-top {

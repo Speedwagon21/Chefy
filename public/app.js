@@ -157,7 +157,7 @@ function updateBasketBar() {
 
 const stateCard = (icon, title, body, extra = '') => `
   <div class="card p-6 text-center space-y-2 mt-2 lg:max-w-lg lg:mx-auto lg:p-10">
-    <div class="w-14 h-14 mx-auto rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl"><i class="fa-solid ${icon}" aria-hidden="true"></i></div>
+    <i class="fa-solid ${icon} text-3xl text-brand-600" aria-hidden="true"></i>
     <h2 class="text-base font-bold text-slate-900">${title}</h2>
     <p class="text-sm text-slate-500">${body}</p>${extra}
   </div>`;
@@ -869,7 +869,7 @@ async function orderView(code, query) {
       <div class="card p-4">
         <div class="flex items-center gap-3">
           ${avatar(o.chef.avatarUrl, o.chef.kitchenName, 'w-12 h-12 rounded-xl')}
-          <div class="flex-1 min-w-0"><h1 class="text-base font-black text-slate-900 truncate">${esc(o.chef.kitchenName)}</h1><p class="text-xs text-slate-500">${meta(['Order ' + esc(o.code), new Date(o.times.created).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })])}</p></div>
+          <div class="flex-1 min-w-0"><h1 class="text-base font-black text-slate-900 truncate">${esc(o.chef.kitchenName)}</h1><p class="text-xs text-slate-500">${meta(['<span class="whitespace-nowrap">Order ' + esc(o.code) + '</span>', new Date(o.times.created).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })])}</p></div>
           ${statusChip(o)}
         </div>
         ${closed ? `<p class="mt-3 pl-3 border-l-2 border-rose-400 text-rose-800 text-sm font-semibold">${o.status === 'declined' ? 'The cook couldn\'t take this order.' : 'This order was cancelled.'} The hold on your card was released, so you weren't charged.</p>` : `
@@ -986,7 +986,7 @@ async function kitchenView(query) {
         </div>`}
       </div>
 
-      <div class="-mx-4 px-4 md:mx-0 md:px-0 flex gap-3 overflow-x-auto hide-scrollbar snap-x md:grid md:grid-cols-4 md:gap-4 md:overflow-visible">
+      <div class="-mx-4 px-4 scroll-px-4 md:mx-0 md:px-0 flex gap-3 overflow-x-auto hide-scrollbar snap-x md:grid md:grid-cols-4 md:gap-4 md:overflow-visible">
         ${[["Today's earnings", money(sum.stats.todayEarned), `${sum.stats.todayOrders} order${sum.stats.todayOrders === 1 ? '' : 's'} charged`],
            ['Active orders', sum.stats.activeOrders, newCount ? `${newCount} new` : 'All handled'],
            ['Dishes', sum.stats.dishes, `${sum.stats.liveDishes} available`],

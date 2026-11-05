@@ -8,6 +8,8 @@
 /* Hallmark · dismissed 76 (unsplash photos, logo.svg on the file render) and the font fallback: the sandbox has no internet and the file render cannot resolve /logo.svg; both load on the server */
 /* Hallmark · dismissed 40 on :disabled controls: WCAG exempts inactive components, and disabled reads by fill, ink and cursor together */
 /* Hallmark · dismissed 74: the palette class names are the brand token families (slate, brand, emerald) mapped to rgb(var(--*)) */
+/* Hallmark · sweep: Floor 0 open FAIL (3 dismissed as sandbox artifacts: 76 x3) · Reflex 0 open (39b on the file render only) · before 197 FAIL 11 REFLEX
+ * finish-review: subagent · 8 findings · 7 resolved, 1 partial then resolved (toast docked inside the header bar) · plus stat strip checked (no page overflow, gutter as scroll padding) · gap: none */
 @import "./tokens.css";
 @import "./base.css";
 
@@ -61,7 +63,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); font-weight: 700; 
 .nav-btn { color: rgb(var(--slate-500)); }
 .nav-top { @apply h-10 px-3.5 rounded-xl text-sm font-bold text-slate-600 flex items-center gap-2 hover:bg-slate-100 hover:text-slate-900; }
 .nav-top[aria-current="page"] { @apply bg-brand-50 text-brand-700; }
-#toast { top: calc(env(safe-area-inset-top) + 5rem); }
+#toast { top: calc(env(safe-area-inset-top) + var(--space-xs)); } /* docked inside the header bar: covers no running content */
 @media (min-width: 1024px) and (pointer: coarse) {
   .nav-top { height: 3rem; padding-left: 1.1rem; padding-right: 1.1rem; font-size: 1rem; }
 }
