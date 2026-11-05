@@ -151,12 +151,12 @@ function updateBasketBar() {
 }
 
 const stateCard = (icon, title, body, extra = '') => `
-  <div class="card p-6 text-center space-y-2 mt-2">
+  <div class="card p-6 text-center space-y-2 mt-2 lg:max-w-lg lg:mx-auto lg:p-10">
     <div class="w-14 h-14 mx-auto rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl"><i class="fa-solid ${icon}" aria-hidden="true"></i></div>
     <h2 class="text-base font-bold text-slate-900">${title}</h2>
     <p class="text-sm text-slate-500">${body}</p>${extra}
   </div>`;
-const skeletonList = n => Array.from({ length: n }, () => `<div class="card p-3 flex gap-3"><div class="skeleton w-28 h-28"></div><div class="flex-1 space-y-2 py-1"><div class="skeleton h-3 w-1/2"></div><div class="skeleton h-4 w-5/6"></div><div class="skeleton h-3 w-2/3"></div></div></div>`).join('');
+const skeletonList = n => Array.from({ length: n }, () => `<div class="card p-3 flex gap-3 lg:min-h-[8.5rem]"><div class="skeleton w-28 h-28"></div><div class="flex-1 space-y-2 py-1"><div class="skeleton h-3 w-1/2"></div><div class="skeleton h-4 w-5/6"></div><div class="skeleton h-3 w-2/3"></div></div></div>`).join('');
 
 // ============ sheets ============
 let lastFocus = null;
@@ -226,36 +226,37 @@ async function afterSignedIn(me, isNew) {
 async function welcomeView() {
   view.innerHTML = `
   <section class="space-y-6">
-    <div class="relative -mx-4 -mt-4 px-5 pt-8 pb-10 bg-gradient-to-br from-slate-900 via-amber-950 to-brand-800 text-white overflow-hidden">
+    <div class="relative -mx-4 -mt-4 px-5 pt-8 pb-10 lg:mx-0 lg:mt-0 lg:rounded-3xl lg:px-14 lg:py-20 bg-gradient-to-br from-slate-900 via-amber-950 to-brand-800 text-white overflow-hidden">
       <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#fb923c_1px,transparent_1px)] [background-size:16px_16px]" aria-hidden="true"></div>
-      <div class="relative space-y-4">
+      <div class="relative space-y-4 lg:space-y-6 lg:max-w-2xl">
         <span class="chip bg-amber-500/20 border border-amber-400/30 text-amber-200"><i class="fa-solid fa-shield-halved text-emerald-300" aria-hidden="true"></i> Every cook's permit is checked</span>
-        <h1 class="text-[2rem] leading-[1.1] font-black tracking-tight">Dinner from the kitchen <span class="text-amber-300">down the street.</span></h1>
-        <p class="text-sm text-slate-200 leading-relaxed">Tamales, birria, fresh bread and cookies made by home cooks in your neighborhood. Order ahead, pick up warm.</p>
-        <div class="flex flex-col gap-2.5 pt-1">
-          <button data-act="welcome-browse" class="py-3.5 bg-brand-500 active:bg-brand-600 rounded-xl font-bold text-sm shadow-lg shadow-brand-900/30">See what's cooking nearby</button>
-          <button data-act="welcome-signup" class="py-3.5 bg-white/10 border border-white/25 rounded-xl font-bold text-sm">Create a free account</button>
+        <h1 class="text-[2rem] lg:text-6xl leading-[1.1] font-black tracking-tight">Dinner from the kitchen <span class="text-amber-300">down the street.</span></h1>
+        <p class="text-sm lg:text-lg text-slate-200 leading-relaxed lg:max-w-xl">Tamales, birria, fresh bread and cookies made by home cooks in your neighborhood. Order ahead, pick up warm.</p>
+        <div class="flex flex-col lg:flex-row gap-2.5 lg:gap-3 pt-1">
+          <button data-act="welcome-browse" class="py-3.5 lg:px-8 hover:bg-brand-600 bg-brand-500 active:bg-brand-600 rounded-xl font-bold text-sm shadow-lg shadow-brand-900/30">See what's cooking nearby</button>
+          <button data-act="welcome-signup" class="py-3.5 lg:px-8 hover:bg-white/20 bg-white/10 border border-white/25 rounded-xl font-bold text-sm">Create a free account</button>
         </div>
       </div>
     </div>
 
     <div>
-      <h2 class="text-lg font-black text-slate-900">How ordering works</h2>
-      <ol class="mt-3 space-y-3">
+      <h2 class="text-lg lg:text-2xl font-black text-slate-900">How ordering works</h2>
+      <ol class="mt-3 lg:mt-5 space-y-3 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-5">
         ${[['fa-magnifying-glass', 'Pick a dish', 'Browse today\'s menus from verified cooks near you. Every listing shows the cook, the price and how long it takes.'],
            ['fa-lock', 'Pay safely', 'Your card is only held when you order. You\'re charged when the cook marks your food ready, and released if they can\'t make it.'],
            ['fa-person-walking', 'Pick it up warm', 'You get the pickup address and instructions once you\'ve paid. Some cooks also deliver.']]
-          .map(([icon, t, b], i) => `<li class="card p-4 flex gap-3"><span class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0"><i class="fa-solid ${icon}" aria-hidden="true"></i></span>
+          .map(([icon, t, b], i) => `<li class="card p-4 lg:p-6 flex gap-3 lg:flex-col"><span class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0"><i class="fa-solid ${icon}" aria-hidden="true"></i></span>
             <div><p class="text-sm font-bold text-slate-900">${i + 1}. ${t}</p><p class="text-xs text-slate-600 mt-0.5 leading-relaxed">${b}</p></div></li>`).join('')}
       </ol>
     </div>
 
-    <div class="card p-5 space-y-3 border-emerald-200 bg-emerald-50/60">
+    <div class="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6">
+    <div class="card p-5 lg:p-8 space-y-3 border-emerald-200 bg-emerald-50/60">
       <h2 class="text-base font-black text-emerald-950"><i class="fa-solid fa-hand-holding-heart text-emerald-600 mr-1" aria-hidden="true"></i> If something's wrong, you get your money back</h2>
       <p class="text-xs text-emerald-900 leading-relaxed">Report a problem within 48 hours of your order being ready. Chefy reviews it and refunds you in full when the food was wrong, missing or not safe to eat.</p>
     </div>
 
-    <div class="rounded-3xl p-5 bg-slate-900 text-white space-y-3">
+    <div class="rounded-3xl p-5 lg:p-8 bg-slate-900 text-white space-y-3">
       <p class="chip bg-white/10 text-amber-200">For home cooks</p>
       <h2 class="text-xl font-black leading-tight">Sell your cooking to neighbors, legally.</h2>
       <ul class="text-xs text-slate-300 space-y-1.5">
@@ -263,7 +264,8 @@ async function welcomeView() {
         <li><i class="fa-solid fa-check text-emerald-400 mr-1.5" aria-hidden="true"></i> Customers pay upfront; the money's held before you start cooking</li>
         <li><i class="fa-solid fa-check text-emerald-400 mr-1.5" aria-hidden="true"></i> Chefy keeps 10% of food sales. Tips are 100% yours</li>
       </ul>
-      <button data-act="start-cooking" class="w-full py-3.5 bg-white text-slate-900 rounded-xl font-bold text-sm">Open your kitchen</button>
+      <button data-act="start-cooking" class="w-full lg:w-auto lg:px-8 py-3.5 bg-white hover:bg-amber-50 text-slate-900 rounded-xl font-bold text-sm">Open your kitchen</button>
+    </div>
     </div>
     <p class="text-center text-[11px] text-slate-400 pb-2">Chefy · Homemade food from neighbors</p>
   </section>`;
@@ -278,22 +280,22 @@ async function eatView(query) {
   const cat = query.get('cat') || 'All';
   const q = S.searchQ || '';
   view.innerHTML = `
-    <section class="space-y-4">
-      <div class="relative">
+    <section class="space-y-4 lg:space-y-6">
+      <div class="relative lg:max-w-xl">
         <label for="search" class="sr-only">Search dishes or cooks</label>
         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm" aria-hidden="true"></i>
         <input id="search" data-input="search" type="search" enterkeyhint="search" value="${esc(q)}" placeholder="Search dishes or cooks"
           class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
       </div>
-      <div class="-mx-4 px-4 flex gap-2 overflow-x-auto hide-scrollbar" role="tablist" aria-label="Categories">
+      <div class="-mx-4 px-4 lg:mx-0 lg:px-0 flex gap-2 overflow-x-auto lg:overflow-visible lg:flex-wrap hide-scrollbar" role="tablist" aria-label="Categories">
         ${['All', ...(S.config.categories || [])].map(c => `<a role="tab" aria-selected="${c === cat}" href="#/${c === 'All' ? '' : '?cat=' + encodeURIComponent(c)}"
           class="px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap ${c === cat ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20' : 'bg-white text-slate-600 border border-slate-200'}">${esc(c)}</a>`).join('')}
       </div>
       <div class="flex items-end justify-between">
-        <div><h1 class="text-lg font-bold text-slate-900">Cooking near you</h1><p class="text-[11px] text-slate-500">From cooks with a checked food handler permit</p></div>
+        <div><h1 class="text-lg lg:text-2xl font-bold lg:font-black text-slate-900">Cooking near you</h1><p class="text-[11px] text-slate-500">From cooks with a checked food handler permit</p></div>
         <span id="dishCount" class="text-[11px] font-semibold text-slate-500"></span>
       </div>
-      <div id="dishList" class="space-y-3">${skeletonList(3)}</div>
+      <div id="dishList" class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">${skeletonList(6)}</div>
     </section>`;
   await loadDishes();
   renderDishList(cat);
@@ -318,7 +320,7 @@ function renderDishList(cat = route().query.get('cat') || 'All') {
 function dishCard(d) {
   const inBasket = S.basket.items[d.id]?.qty || 0;
   return `
-  <article class="card p-3 flex gap-3 ${d.available ? '' : 'opacity-60'}">
+  <article class="card p-3 flex gap-3 transition-shadow ${d.available ? '' : 'opacity-60'}">
     <a href="#/chef/${d.chefId}" class="relative w-28 h-28 shrink-0 rounded-xl overflow-hidden" aria-label="${esc(d.chef.kitchenName)} menu">
       ${dishImg(d.imageUrl, 'w-full h-full')}
       ${d.prepTime ? `<span class="absolute bottom-1.5 left-1.5 bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md"><i class="fa-solid fa-clock text-brand-600" aria-hidden="true"></i> ${esc(d.prepTime)}</span>` : ''}
@@ -383,17 +385,17 @@ function refreshShopLists() {
 
 // ============ cook page ============
 async function chefView(id) {
-  view.innerHTML = `<div class="skeleton h-40 -mx-4 -mt-4 rounded-none"></div><div class="space-y-3 mt-4">${skeletonList(2)}</div>`;
+  view.innerHTML = `<div class="skeleton h-40 lg:h-64 -mx-4 -mt-4 lg:mx-0 lg:mt-0 rounded-none lg:rounded-3xl"></div><div class="space-y-3 mt-4">${skeletonList(2)}</div>`;
   S.chefPage = await api(`/api/chefs/${encodeURIComponent(id)}`);
   const { chef, reviews } = S.chefPage;
   S.chefPage.dishes.forEach(d => { d.chef = chef; });
   view.innerHTML = `
-    <div class="relative -mx-4 -mt-4 h-40 bg-gradient-to-br from-amber-200 to-brand-300">
+    <div class="relative -mx-4 -mt-4 h-40 lg:mx-0 lg:mt-0 lg:h-64 lg:rounded-3xl overflow-hidden bg-gradient-to-br from-amber-200 to-brand-300">
       ${chef.coverUrl ? `<img src="${esc(chef.coverUrl)}" alt="" class="w-full h-full object-cover">` : ''}
       <a href="#/" class="absolute top-3 left-3 w-11 h-11 rounded-full bg-white/90 flex items-center justify-center text-slate-800 shadow" aria-label="Back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></a>
     </div>
-    <section class="relative -mt-8 space-y-4">
-      <div class="card p-4">
+    <section class="relative -mt-8 lg:-mt-16 lg:px-6 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[22rem_1fr] lg:gap-8 lg:items-start">
+      <div class="card p-4 lg:p-5 lg:sticky lg:top-24">
         <div class="flex items-center gap-3">
           ${avatar(chef.avatarUrl, chef.kitchenName, 'w-16 h-16 rounded-2xl ring-4 ring-white')}
           <div class="min-w-0">
@@ -410,8 +412,9 @@ async function chefView(id) {
         <p class="text-[11px] text-slate-500 mt-2"><i class="fa-solid fa-person-walking mr-1" aria-hidden="true"></i>Pickup${chef.offersDelivery ? ' or local delivery' : ' only'} · exact address shown after you order</p>
         ${!chef.live ? `<p class="mt-2 text-xs font-bold text-amber-700"><i class="fa-solid fa-moon mr-1" aria-hidden="true"></i>Not taking orders right now.</p>` : ''}
       </div>
-      <h2 class="text-base font-bold text-slate-900">Menu</h2>
-      <div id="chefMenu" class="space-y-3"></div>
+      <div class="space-y-4 lg:pt-20">
+      <h2 class="text-base lg:text-xl font-bold text-slate-900">Menu</h2>
+      <div id="chefMenu" class="grid gap-3 lg:grid-cols-2"></div>
       <h2 class="text-base font-bold text-slate-900 pt-2">Reviews</h2>
       ${reviews.length ? reviews.map(r => `
         <div class="card p-3.5">
@@ -420,6 +423,7 @@ async function chefView(id) {
           ${r.text ? `<p class="text-sm text-slate-600 mt-1">${esc(r.text)}</p>` : ''}
           <p class="text-[10px] text-slate-400 mt-1">${timeAgo(r.at)}</p>
         </div>`).join('') : `<p class="text-sm text-slate-500">No reviews yet. Be the first to order.</p>`}
+      </div>
     </section>`;
   renderChefMenu();
 }
@@ -626,9 +630,10 @@ async function ordersView() {
   const active = orders.filter(o => ['received', 'preparing', 'ready'].includes(o.status));
   const past = orders.filter(o => !active.includes(o));
   $('#ordersDot').classList.toggle('hidden', !active.length);
+  $('#ordersDotD').classList.toggle('hidden', !active.length);
   if (!orders.length) { view.innerHTML = stateCard('fa-receipt', 'No orders yet', 'When you order, you can follow it here: cooking, ready, picked up.', `<a href="#/" class="btn-dark mt-4">Find something to eat</a>`); return; }
   const card = o => `
-    <a href="#/orders/${esc(o.code)}" class="card p-4 block space-y-2">
+    <a href="#/orders/${esc(o.code)}" class="card p-4 block space-y-2 transition-shadow">
       <div class="flex items-center gap-3">
         ${avatar(o.chef.avatarUrl, o.chef.kitchenName)}
         <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 truncate">${esc(o.chef.kitchenName)}</p><p class="text-[11px] text-slate-500">${esc(o.code)} · ${timeAgo(o.times.created)}</p></div>
@@ -638,8 +643,8 @@ async function ordersView() {
       <div class="flex gap-1.5 flex-wrap">${statusChip(o)} ${payChip(o.payment)}${o.issue ? ` <span class="chip bg-rose-50 text-rose-700">Problem ${esc(o.issue.status)}</span>` : ''}</div>
     </a>`;
   view.innerHTML = `
-    ${active.length ? `<h1 class="text-base font-bold text-slate-900 mb-2">In progress</h1><div class="space-y-3 mb-6">${active.map(card).join('')}</div>` : ''}
-    ${past.length ? `<h2 class="text-base font-bold text-slate-900 mb-2">Past orders</h2><div class="space-y-3">${past.map(card).join('')}</div>` : ''}`;
+    ${active.length ? `<h1 class="text-base lg:text-xl font-bold text-slate-900 mb-2 lg:mb-3">In progress</h1><div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 mb-6 lg:mb-10">${active.map(card).join('')}</div>` : ''}
+    ${past.length ? `<h2 class="text-base lg:text-xl font-bold text-slate-900 mb-2 lg:mb-3">Past orders</h2><div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">${past.map(card).join('')}</div>` : ''}`;
 }
 
 async function orderView(code, query) {
@@ -653,6 +658,7 @@ async function orderView(code, query) {
   const reached = { received: 1, preparing: 2, ready: 3, completed: 4 }[o.status] || 0;
   const closed = ['declined', 'canceled'].includes(o.status);
   view.innerHTML = `
+    <div class="lg:max-w-2xl lg:mx-auto">
     <a href="#/orders" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 mb-3 h-11"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All orders</a>
     <section class="space-y-4">
       <div class="card p-4">
@@ -711,7 +717,8 @@ async function orderView(code, query) {
         ${o.canCancel ? `<button data-act="cancel-order" data-code="${esc(o.code)}" class="btn-ghost text-rose-700 border-rose-200">Cancel order</button>` : ''}
         ${o.canReport ? `<button data-act="report" data-code="${esc(o.code)}" class="btn-ghost"><i class="fa-solid fa-flag text-rose-600" aria-hidden="true"></i> Report a problem</button>` : ''}
       </div>
-    </section>`;
+    </section>
+    </div>`;
 }
 
 // ============ kitchen (cook) ============
@@ -774,15 +781,15 @@ async function kitchenView(query) {
         </div>`}
       </div>
 
-      <div class="-mx-4 px-4 flex gap-3 overflow-x-auto hide-scrollbar snap-x">
+      <div class="-mx-4 px-4 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto hide-scrollbar snap-x lg:grid lg:grid-cols-4 lg:gap-4 lg:overflow-visible">
         ${[["Today's earnings", money(sum.stats.todayEarned), `${sum.stats.todayOrders} order${sum.stats.todayOrders === 1 ? '' : 's'} charged`],
            ['Active orders', sum.stats.activeOrders, newCount ? `${newCount} new` : 'All handled'],
            ['Dishes', sum.stats.dishes, `${sum.stats.liveDishes} available`],
            ['Balance', sum.balance ? money(sum.balance.available) : '—', 'Ready to cash out']]
-          .map(([l, v, s]) => `<div class="snap-start shrink-0 w-36 card p-3.5"><p class="text-[11px] font-semibold text-slate-500">${l}</p><p class="text-xl font-black text-slate-900 mt-0.5">${v}</p><p class="text-[10px] text-slate-500">${s}</p></div>`).join('')}
+          .map(([l, v, s]) => `<div class="snap-start shrink-0 w-36 lg:w-auto card p-3.5 lg:p-5"><p class="text-[11px] font-semibold text-slate-500">${l}</p><p class="text-xl font-black text-slate-900 mt-0.5">${v}</p><p class="text-[10px] text-slate-500">${s}</p></div>`).join('')}
       </div>
 
-      <div class="grid grid-cols-3 p-1 bg-slate-100 rounded-xl text-xs font-bold sticky z-20" style="top: calc(3.5rem + env(safe-area-inset-top) + .5rem)" role="tablist">
+      <div class="grid grid-cols-3 p-1 bg-slate-100 rounded-xl text-xs lg:text-sm font-bold sticky z-20 lg:max-w-md lg:top-20" style="top: calc(3.5rem + env(safe-area-inset-top) + .5rem)" role="tablist">
         ${[['orders', `Orders${newCount ? ` (${newCount})` : ''}`], ['menu', 'Menu'], ['payouts', 'Payouts']].map(([k, l]) =>
           `<a role="tab" aria-selected="${tab === k}" href="#/kitchen?tab=${k}" class="py-2.5 text-center rounded-lg ${tab === k ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}">${l}</a>`).join('')}
       </div>
@@ -792,7 +799,7 @@ async function kitchenView(query) {
 
 function ordersTab(orders) {
   if (!orders.length) return stateCard('fa-bell-concierge', 'No orders yet', 'New orders show up here, with a badge on the Kitchen tab. Share your kitchen page with neighbors to get your first one.');
-  return `<div class="space-y-3">${orders.map(o => {
+  return `<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 items-start">${orders.map(o => {
     const [label, cls, icon] = COOK_STATUS[o.status] || [o.status, 'bg-slate-100', 'fa-circle'];
     const act = (a, text, style) => `<button data-act="cook-order" data-a="${a}" data-code="${esc(o.code)}" class="flex-1 h-11 px-3 rounded-xl text-xs font-bold ${style}">${text}</button>`;
     return `
@@ -822,8 +829,8 @@ function ordersTab(orders) {
 
 function menuTab(dishes) {
   return `
-    <button data-act="dish-new" class="btn-primary mb-3"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add a dish</button>
-    ${dishes.length ? `<div class="space-y-3">${dishes.map(d => `
+    <button data-act="dish-new" class="btn-primary mb-3 lg:mb-4 lg:w-auto lg:px-6"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add a dish</button>
+    ${dishes.length ? `<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">${dishes.map(d => `
       <div class="card p-3 flex gap-3 items-center">
         ${dishImg(d.imageUrl, 'w-16 h-16 rounded-xl shrink-0')}
         <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(d.title)}</p><p class="text-xs text-brand-700 font-bold">${money(d.price)} <span class="text-slate-400 font-medium">· ${esc(d.category)}</span></p>
@@ -837,8 +844,9 @@ function payoutsTab(sum) {
   const c = sum.chef, b = sum.balance || { available: 0, held: 0 };
   const demo = c.payouts.mode === 'demo';
   return `
-    <div class="space-y-4">
-      <div class="rounded-2xl p-5 bg-gradient-to-br from-slate-900 to-amber-950 text-white">
+    <div class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[24rem_1fr] lg:gap-6 lg:items-start">
+      <div class="space-y-4">
+      <div class="rounded-2xl p-5 lg:p-6 bg-gradient-to-br from-slate-900 to-amber-950 text-white">
         <p class="text-xs font-semibold text-slate-300">Available to cash out</p>
         <p class="text-3xl font-black mt-1">${money(b.available)}</p>
         <p class="text-[11px] text-amber-200 mt-1">${money(b.held)} more is held on customers' cards for orders in progress.</p>
@@ -860,7 +868,8 @@ function payoutsTab(sum) {
       <div class="card p-4 space-y-2"><p class="text-sm font-bold text-slate-900">Set up payouts to get paid</p>
         <p class="text-xs text-slate-600">${demo ? 'Add the bank account your earnings go to.' : 'Chefy uses Stripe to verify your identity and send money to your bank. It takes about 5 minutes.'}</p>
         <a href="#/kitchen/setup?step=3" class="btn-dark">Set up payouts</a></div>`}
-      <div class="card p-4">
+      </div>
+      <div class="card p-4 lg:p-5">
         <p class="text-sm font-bold text-slate-900 mb-1">Activity</p>
         <p class="text-[11px] text-slate-500 mb-2">Chefy keeps 10% of food sales. Tips are 100% yours.</p>
         ${sum.ledger.length ? `<div class="divide-y divide-slate-100">${sum.ledger.map(e => `
@@ -875,9 +884,10 @@ function payoutsTab(sum) {
 }
 
 function updateKitchenBadge(n) {
-  const el = $('#kitchenBadge');
-  el.textContent = n;
-  el.classList.toggle('hidden', !n); el.classList.toggle('flex', !!n);
+  for (const el of [$('#kitchenBadge'), $('#kitchenBadgeD')]) {
+    el.textContent = n;
+    el.classList.toggle('hidden', !n); el.classList.toggle('flex', !!n);
+  }
 }
 
 // ============ dish editor ============
@@ -1036,19 +1046,19 @@ async function setupView(query) {
     body = `<p class="text-sm text-slate-600 mb-4">Start with the dish people already ask you for. You can add more any time from the Menu tab.</p>${dishForm({}, { submitLabel: 'Add dish and finish', formName: 'setup-dish' })}
       <a href="#/kitchen" class="btn-ghost mt-2">Skip for now</a>`;
   }
-  view.innerHTML = head + body;
+  view.innerHTML = `<div class="lg:max-w-xl lg:mx-auto">${head}${body}</div>`;
 }
 
 // ============ account ============
 async function accountView() {
   if (!S.me.user) {
-    view.innerHTML = `<div class="card p-5">${authForms(S.accountMode || 'signup')}</div>
+    view.innerHTML = `<div class="card p-5 lg:p-8 lg:max-w-md lg:mx-auto lg:mt-6">${authForms(S.accountMode || 'signup')}</div>
       <a href="#/welcome" class="block text-center text-xs font-bold text-slate-500 mt-4 h-11">What is Chefy?</a>`;
     return;
   }
   const u = S.me.user;
   view.innerHTML = `
-    <section class="space-y-4">
+    <section class="space-y-4 lg:max-w-xl lg:mx-auto">
       <div class="card p-4 flex items-center gap-3">
         ${avatar(null, u.name, 'w-14 h-14 rounded-2xl')}
         <div class="min-w-0"><h1 class="text-lg font-black text-slate-900 truncate">${esc(u.name)}</h1><p class="text-xs text-slate-500 truncate">${esc(u.email)}</p></div>
@@ -1076,10 +1086,11 @@ async function adminView() {
   const q = await api('/api/admin/queue');
   view.innerHTML = `
     <section class="space-y-4">
-      <div class="grid grid-cols-2 gap-3">
-        <div class="card p-3.5"><p class="text-[11px] font-semibold text-slate-500">Paid orders</p><p class="text-xl font-black">${q.totals.orders}</p></div>
+      <div class="grid grid-cols-2 gap-3 lg:max-w-xl">
+        <div class="card p-3.5 lg:p-5"><p class="text-[11px] font-semibold text-slate-500">Paid orders</p><p class="text-xl font-black">${q.totals.orders}</p></div>
         <div class="card p-3.5"><p class="text-[11px] font-semibold text-slate-500">Chefy revenue</p><p class="text-xl font-black">${money(q.totals.revenue)}</p></div>
       </div>
+      <div class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start"><div class="space-y-3">
       <h1 class="text-base font-bold text-slate-900">Permits to check (${q.permits.length})</h1>
       ${q.permits.length ? q.permits.map(p => `
         <div class="card p-4 space-y-2 text-xs">
@@ -1090,7 +1101,8 @@ async function adminView() {
           <div class="flex gap-2"><button data-act="permit" data-id="${p.chefId}" data-d="rejected" class="flex-1 h-11 rounded-xl border border-rose-200 text-rose-700 font-bold">Reject</button>
             <button data-act="permit" data-id="${p.chefId}" data-d="verified" class="flex-1 h-11 rounded-xl bg-emerald-600 text-white font-bold">Approve</button></div>
         </div>`).join('') : `<p class="text-sm text-slate-500">Nothing waiting.</p>`}
-      <h2 class="text-base font-bold text-slate-900 pt-2">Problems reported (${q.issues.length})</h2>
+      </div><div class="space-y-3">
+      <h2 class="text-base font-bold text-slate-900 pt-2 lg:pt-0">Problems reported (${q.issues.length})</h2>
       ${q.issues.length ? q.issues.map(o => `
         <div class="card p-4 space-y-2 text-xs">
           <p class="text-sm font-bold text-slate-900">${esc(o.code)} · ${esc(o.chef.kitchenName)} <span class="font-normal text-slate-500">· ${money(o.total)}</span></p>
@@ -1099,6 +1111,7 @@ async function adminView() {
           <div class="flex gap-2"><button data-act="issue" data-code="${esc(o.code)}" data-d="dismiss" class="flex-1 h-11 rounded-xl border border-slate-200 font-bold">Dismiss</button>
             <button data-act="issue" data-code="${esc(o.code)}" data-d="refund" class="flex-1 h-11 rounded-xl bg-rose-600 text-white font-bold">Refund ${money(o.total)}</button></div>
         </div>`).join('') : `<p class="text-sm text-slate-500">No open problems.</p>`}
+      </div></div>
     </section>`;
 }
 
