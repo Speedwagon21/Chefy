@@ -113,7 +113,6 @@ async function render() {
   document.querySelectorAll('[data-nav]').forEach(a => a.setAttribute('aria-current', a.dataset.nav === navKey ? 'page' : 'false'));
   setHeader();
   try {
-    if (!top && !S.me.user && !store.get('chefy_seen_welcome', false)) return go('#/welcome');
     const views = {
       '': () => eatView(query), welcome: welcomeView, chef: () => chefView(parts[1]),
       orders: () => parts[1] ? orderView(parts[1], query) : ordersView(),
@@ -778,7 +777,7 @@ async function submitPayment(form) {
     setBusy(btn, true, 'Checking your card…');
     const { error } = await S.stripe.confirmPayment({
       elements: S.elements, redirect: 'if_required',
-      confirmParams: { return_url: `${location.origin}/#/orders/${order.code}?paid=1` }
+      confirmParams: { return_url: `${location.origin}/app#/orders/${order.code}?paid=1` }
     });
     if (error) { setBusy(btn, false); return showError(form, error.message || 'Your card couldn\'t be authorized.'); }
   } else {
@@ -1263,7 +1262,7 @@ async function setupView(query) {
 async function accountView() {
   if (!S.me.user) {
     view.innerHTML = `<div class="card p-5 lg:p-8 lg:max-w-md lg:mx-auto lg:mt-6">${authForms(S.accountMode || 'signup')}</div>
-      <a href="#/welcome" class="block text-center text-xs font-bold text-slate-500 mt-4 h-11">What is Chefy?</a>`;
+      <a href="/" class="block text-center text-xs font-bold text-slate-500 mt-4 h-11">What is Chefy?</a>`;
     return;
   }
   const u = S.me.user;
@@ -1282,7 +1281,7 @@ async function accountView() {
       <div class="card divide-y divide-slate-100">
         <a href="#/kitchen" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-kitchen-set text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">${S.me.chef ? 'My kitchen' : 'Cook on Chefy'}</span><i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>
         ${u.isAdmin ? `<a href="#/admin" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-user-shield text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">Admin: permits and refunds</span><i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>` : ''}
-        <a href="#/welcome" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-circle-info text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">How Chefy works</span><i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>
+        <a href="/" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-circle-info text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">How Chefy works</span><i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>
         <button data-act="logout" class="w-full flex items-center gap-3 p-4 text-sm font-bold text-rose-700"><i class="fa-solid fa-arrow-right-from-bracket w-5" aria-hidden="true"></i> Sign out</button>
       </div>
       ${S.config.payments.mode === 'demo' ? `<p class="text-xs text-center text-slate-500">This Chefy server is in demo payments mode: no real cards are charged.</p>` : ''}

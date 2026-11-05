@@ -103,8 +103,8 @@ async function startOnboarding(chef, user) {
   const link = await stripe.accountLinks.create({
     account: accountId,
     type: 'account_onboarding',
-    refresh_url: `${PUBLIC_URL}/#/kitchen/setup?stripe=refresh`,
-    return_url: `${PUBLIC_URL}/#/kitchen/setup?stripe=return`
+    refresh_url: `${PUBLIC_URL}/app#/kitchen/setup?stripe=refresh`,
+    return_url: `${PUBLIC_URL}/app#/kitchen/setup?stripe=return`
   });
   return link.url;
 }

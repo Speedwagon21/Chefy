@@ -2,7 +2,7 @@
   "name": "Chefy",
   "short_name": "Chefy",
   "description": "Homemade food from verified home cooks in your neighborhood.",
-  "start_url": "/#/",
+  "start_url": "/app#/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
