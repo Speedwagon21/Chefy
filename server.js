@@ -19,8 +19,8 @@ app.use((_req, res, next) => {
     'Content-Security-Policy': [
       "default-src 'self'",
       "script-src 'self' https://js.stripe.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' https://fonts.gstatic.com",
+      "style-src 'self' 'unsafe-inline'",
+      "font-src 'self'",
       "img-src 'self' data: https:",
       "connect-src 'self' https://api.stripe.com",
       "frame-src https://js.stripe.com https://hooks.stripe.com",
@@ -50,6 +50,7 @@ app.use('/api', router);
 app.use('/api', (_req, _res, next) => next(new auth.HttpError(404, 'Not found.')));
 
 app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads', 'public'), { maxAge: '30d', immutable: true }));
+app.use('/vendor/fonts', express.static(path.join(__dirname, 'node_modules', '@fontsource'), { maxAge: '30d' }));
 app.use('/vendor/fa', express.static(path.join(__dirname, 'node_modules', '@fortawesome', 'fontawesome-free'), { maxAge: '30d' }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
 app.get('/{*splat}', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));

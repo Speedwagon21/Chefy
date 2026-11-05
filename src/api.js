@@ -60,7 +60,7 @@ function publicChef(c) {
   };
 }
 function permitLabel(c) {
-  return `${c.permit_state === 'Other' ? '' : c.permit_state + ' '}food handler permit${c.permit_expiry ? ' · valid thru ' + c.permit_expiry.slice(0, 7) : ''}`;
+  return `${c.permit_state === 'Other' ? '' : c.permit_state + ' '}food handler permit${c.permit_expiry ? ', valid through ' + c.permit_expiry.slice(0, 7) : ''}`;
 }
 function ownChef(c) {
   return {
@@ -422,12 +422,12 @@ router.get('/chef/summary', requireUser, requireChef, wrap(async (req, res) => {
   const ledger = [
     ...all(`SELECT code, chef_payout_cents, subtotal_cents, commission_cents, tip_cents, captured_at, card_label FROM orders
             WHERE chef_id = ? AND captured_at IS NOT NULL ORDER BY captured_at DESC LIMIT 50`, id)
-      .map(o => ({ kind: 'sale', title: `${o.code} · Sale`, detail: `${money(o.subtotal_cents)} food − ${money(o.commission_cents)} fee + ${money(o.tip_cents)} tip`, amount: o.chef_payout_cents, at: o.captured_at })),
+      .map(o => ({ kind: 'sale', title: `${o.code} sale`, detail: `${money(o.subtotal_cents)} food − ${money(o.commission_cents)} fee + ${money(o.tip_cents)} tip`, amount: o.chef_payout_cents, at: o.captured_at })),
     ...all(`SELECT code, chef_payout_cents, refunded_at FROM orders WHERE chef_id = ? AND refunded_at IS NOT NULL ORDER BY refunded_at DESC LIMIT 50`, id)
-      .map(o => ({ kind: 'refund', title: `${o.code} · Refunded`, detail: 'Customer refunded in full', amount: -o.chef_payout_cents, at: o.refunded_at })),
+      .map(o => ({ kind: 'refund', title: `${o.code} refunded`, detail: 'Customer refunded in full', amount: -o.chef_payout_cents, at: o.refunded_at })),
     ...all('SELECT * FROM payouts WHERE chef_id = ? ORDER BY created_at DESC LIMIT 50', id)
       .map(p => ({ kind: 'payout', title: p.instant ? 'Instant payout' : 'Standard payout',
-        detail: `To ${p.destination}${p.fee_cents ? ` · ${money(p.fee_cents)} fee` : ''} · ${p.status === 'paid' || (p.arrives_at && p.arrives_at < now()) ? 'Paid' : 'Arrives ' + new Date(p.arrives_at).toDateString().slice(0, 10)}`,
+        detail: `To ${p.destination}${p.fee_cents ? `, ${money(p.fee_cents)} fee` : ''}. ${p.status === 'paid' || (p.arrives_at && p.arrives_at < now()) ? 'Paid' : 'Arrives ' + new Date(p.arrives_at).toDateString().slice(0, 10)}`,
         amount: -p.amount_cents, at: p.created_at }))
   ].sort((a, b) => b.at - a.at).slice(0, 60);
   res.json({
@@ -531,7 +531,7 @@ router.post('/orders/:code/confirm', requireUser, wrap(async (req, res) => {
     const r = await pay.checkHold(o, req.body.demoCard);
     if (!r.authorized) {
       throw new HttpError(402, r.status === 'requires_payment_method'
-        ? 'Your card was declined. No charge was made — try another card.'
+        ? 'Your card was declined. No charge was made. Try another card.'
         : 'Payment isn\'t complete yet. Finish the card check and try again.');
     }
     o = transition(o, ['awaiting_payment'], 'received', { payment_status: 'authorized', card_label: r.cardLabel, authorized_at: now() });

@@ -55,8 +55,8 @@ function dishImg(url, cls) {
     : `<div class="${cls} bg-gradient-to-br from-slate-100 to-brand-100 flex items-center justify-center text-brand-500 text-2xl" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></div>`;
 }
 function stars(avg, count) {
-  if (!count) return '<span class="text-slate-400">New</span>';
-  return `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${avg.toFixed(1)} <span class="text-slate-400">(${count})</span>`;
+  if (!count) return '<span class="text-slate-500">New</span>';
+  return `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${avg.toFixed(1)} <span class="text-slate-500">(${count})</span>`;
 }
 function setBusy(btn, busy, label) {
   if (!btn) return;
@@ -69,6 +69,7 @@ function showError(form, msg) {
   box.innerHTML = `<i class="fa-solid fa-circle-exclamation mt-0.5" aria-hidden="true"></i><span>${esc(msg)}</span>`;
   box.classList.remove('hidden');
 }
+const meta = (parts, cls = '') => `<span class="inline-flex flex-wrap items-baseline gap-x-3 gap-y-0.5 ${cls}">${parts.filter(Boolean).map(p => `<span>${p}</span>`).join('')}</span>`;
 const errorBox = () => `<div data-error role="alert" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold flex items-start gap-2"></div>`;
 const formValues = f => Object.fromEntries(new FormData(f).entries());
 
@@ -132,7 +133,7 @@ function setHeader() {
   $('#headerRight').innerHTML = `
     ${n ? `<button data-act="open-basket" class="relative w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-900 flex items-center justify-center" aria-label="Basket, ${n} item${n === 1 ? '' : 's'}">
       <i class="fa-solid fa-basket-shopping text-lg" aria-hidden="true"></i>
-      <span class="absolute -top-0.5 -right-0.5 min-w-[1.3rem] h-[1.3rem] px-1 bg-brand-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">${n}</span></button>` : ''}
+      <span class="absolute -top-0.5 -right-0.5 min-w-[1.3rem] h-[1.3rem] px-1 bg-brand-600 text-white text-xs font-bold rounded-full flex items-center justify-center ring-2 ring-white">${n}</span></button>` : ''}
     <a href="#/account" class="w-12 h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center ${u ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'}" aria-label="${u ? 'Your account' : 'Sign in'}">
       ${u ? `<span class="text-sm font-black">${initials(u.name)}</span>` : '<i class="fa-solid fa-user text-xl" aria-hidden="true"></i>'}</a>`;
   const fab = $('#fab');
@@ -207,10 +208,10 @@ function authForms(mode = 'signup', reason = '') {
       ${signup ? `<div><label class="label" for="aName">Your name</label><input id="aName" name="name" autocomplete="name" required class="field" placeholder="First and last name"></div>` : ''}
       <div><label class="label" for="aEmail">Email</label><input id="aEmail" name="email" type="email" autocomplete="email" inputmode="email" required class="field" placeholder="you@example.com"></div>
       <div><label class="label" for="aPass">Password</label><input id="aPass" name="password" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}" required minlength="8" class="field" placeholder="${signup ? 'At least 8 characters' : 'Your password'}"></div>
-      ${signup ? `<div><label class="label" for="aHood">Neighborhood <span class="font-normal text-slate-400">(optional)</span></label><input id="aHood" name="neighborhood" autocomplete="address-level3" class="field" placeholder="e.g. Mission District"></div>` : ''}
+      ${signup ? `<div><label class="label" for="aHood">Neighborhood <span class="font-normal text-slate-500">(optional)</span></label><input id="aHood" name="neighborhood" autocomplete="address-level3" class="field" placeholder="e.g. Mission District"></div>` : ''}
       ${errorBox()}
       <button class="btn-primary" type="submit">${signup ? 'Create account' : 'Sign in'}</button>
-      ${signup ? `<p class="text-[11px] text-slate-400 text-center">By creating an account you agree to Chefy's terms and privacy policy.</p>` : ''}
+      ${signup ? `<p class="text-xs text-slate-500 text-center">By creating an account you agree to Chefy's terms and privacy policy.</p>` : ''}
     </form>`;
 }
 function openAuthSheet(reason, mode = 'signup') {
@@ -222,7 +223,6 @@ async function afterSignedIn(me, isNew) {
   const then = S.afterAuth; S.afterAuth = null;
   S.onSheetClose = null;
   closeSheet(true);
-  toast(isNew ? `Welcome to Chefy, ${me.user.name.split(' ')[0]}!` : `Signed in as ${me.user.name.split(' ')[0]}`);
   if (then) then(); else render();
 }
 
@@ -234,13 +234,13 @@ async function welcomeView() {
       <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=1400&auto=format&fit=crop&q=75" alt="" class="absolute inset-y-0 right-0 w-full lg:w-3/5 h-full object-cover opacity-35 lg:opacity-100">
       <div class="absolute inset-0 bg-gradient-to-r from-slate-950 from-30% via-slate-950/85 to-slate-950/30" aria-hidden="true"></div>
       <div class="relative space-y-4 lg:space-y-6 lg:max-w-2xl">
-        <span class="chip bg-brand-500/20 border border-brand-400/30 text-brand-100"><i class="fa-solid fa-shield-halved text-emerald-300" aria-hidden="true"></i> Every cook's permit is checked</span>
-        <h1 class="text-[2rem] lg:text-6xl leading-[1.1] font-black tracking-tight">Dinner from the kitchen <span class="text-brand-400">down the street.</span></h1>
+        <h1 class="text-[2rem] lg:text-6xl leading-[1.1] font-black tracking-tight">Dinner from the kitchen<br> down the street.</h1>
         <p class="text-sm lg:text-lg text-slate-200 leading-relaxed lg:max-w-xl">Tamales, birria, fresh bread and cookies made by home cooks in your neighborhood. Order ahead, pick up warm.</p>
         <div class="flex flex-col lg:flex-row gap-2.5 lg:gap-3 pt-1">
-          <button data-act="welcome-browse" class="py-3.5 lg:px-8 bg-brand-600 hover:bg-brand-700 rounded-full font-bold text-sm shadow-lg shadow-brand-900/30">See what's cooking nearby</button>
+          <button data-act="welcome-browse" class="py-3.5 lg:px-8 bg-brand-600 hover:bg-brand-700 rounded-full font-bold text-sm shadow-lg">See what's cooking nearby</button>
           <button data-act="welcome-signup" class="py-3.5 lg:px-8 hover:bg-white/20 bg-white/10 border border-white/25 rounded-full font-bold text-sm">Create a free account</button>
         </div>
+        <p class="text-sm text-slate-200"><i class="fa-solid fa-shield-halved text-emerald-300" aria-hidden="true"></i> Every cook's food handler permit is checked by Chefy.</p>
       </div>
     </div>
 
@@ -272,7 +272,7 @@ async function welcomeView() {
       <button data-act="start-cooking" class="w-full lg:w-auto lg:px-8 py-3.5 bg-white hover:bg-slate-100 text-slate-900 rounded-xl font-bold text-sm">Open your kitchen</button>
     </div>
     </div>
-    <p class="text-center text-[11px] text-slate-400 pb-2">Chefy · Homemade food from neighbors</p>
+    <p class="text-center text-sm text-slate-500 pb-2">Homemade food from your neighbors.</p>
   </section>`;
 }
 
@@ -284,7 +284,7 @@ const DEFAULT_FILTERS = { sort: 'popular', dietary: '', availableOnly: false };
 S.filters = { ...DEFAULT_FILTERS, ...store.get('chefy_filters', {}) };
 const filtersActive = () => S.filters.sort !== 'popular' || !!S.filters.dietary || S.filters.availableOnly;
 const prepMinutes = d => { const m = /\d+/.exec(d.prepTime || ''); return m ? Number(m[0]) : 999; };
-const seeAll = id => `<button ${id ? `id="${id}"` : ''} data-act="${id === 'seeAllBtn' ? 'see-all' : 'filters'}" class="text-sm font-bold text-brand-600 hover:text-brand-700 h-11 flex items-center gap-1.5">See all <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`;
+const seeAll = id => `<button ${id ? `id="${id}"` : ''} data-act="${id === 'seeAllBtn' ? 'see-all' : 'filters'}" class="text-sm font-bold text-brand-600 hover:text-brand-700 h-11 flex items-center">See all</button>`;
 const skeletonCards = n => Array.from({ length: n }, () => `<div class="card overflow-hidden"><div class="skeleton aspect-[4/3] rounded-none"></div><div class="p-3 space-y-2"><div class="skeleton h-4 w-5/6"></div><div class="skeleton h-3 w-2/3"></div><div class="skeleton h-6 w-12"></div></div></div>`).join('');
 const cardGrid = 'grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4 lg:gap-5';
 
@@ -297,7 +297,7 @@ async function eatView(query) {
   view.innerHTML = `
     <section class="space-y-7 lg:space-y-10">
       <div class="flex items-center gap-3">
-        <div class="relative flex-1 lg:max-w-2xl">
+        <div class="relative flex-1">
           <label for="search" class="sr-only">Search dishes, cooks or ingredients</label>
           <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 text-lg" aria-hidden="true"></i>
           <input id="search" data-input="search" type="search" enterkeyhint="search" value="${esc(S.searchQ || '')}" placeholder="Search dishes or cooks…"
@@ -311,9 +311,9 @@ async function eatView(query) {
       <div id="trending"></div>
       <div>
         <div class="flex items-center justify-between mb-3"><h2 class="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">Browse categories</h2>${seeAll()}</div>
-        <div class="-mx-4 px-4 md:-mx-6 md:px-6 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto hide-scrollbar lg:grid lg:grid-cols-10 lg:overflow-visible" role="tablist" aria-label="Categories">
+        <div class="-mx-4 px-4 md:-mx-6 md:px-6 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto hide-scrollbar lg:flex-wrap lg:gap-2 lg:overflow-visible" role="tablist" aria-label="Categories">
           ${['All', ...(S.config.categories || [])].map(c => `<a role="tab" aria-selected="${c === cat}" href="#/${c === 'All' ? '' : '?cat=' + encodeURIComponent(c)}"
-            class="shrink-0 w-[5.5rem] md:w-24 lg:w-auto h-24 md:h-[6.5rem] rounded-2xl flex flex-col items-center justify-center gap-2 text-center transition-colors ${c === cat ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'}">
+            class="shrink-0 w-[5.5rem] md:w-24 h-24 md:h-[6.5rem] lg:w-auto lg:h-11 lg:px-4 rounded-2xl lg:rounded-full flex flex-col lg:flex-row items-center justify-center gap-2 text-center transition-colors ${c === cat ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'}">
             <i class="fa-solid ${CAT_ICONS[c] || 'fa-utensils'} text-2xl" aria-hidden="true"></i><span class="text-xs font-bold leading-tight px-1">${esc(c)}</span></a>`).join('')}
         </div>
       </div>
@@ -334,20 +334,20 @@ function renderTrending() {
     .slice(0, 3);
   if (!top.length) { box.innerHTML = ''; return; }
   box.innerHTML = `
+    <h2 class="text-xl lg:text-2xl font-black text-slate-900 tracking-tight mb-3">Trending this week</h2>
     <div class="relative" aria-roledescription="carousel" aria-label="Trending dishes">
       <div id="trendTrack" class="-mx-4 px-4 md:mx-0 md:px-0 flex gap-3 overflow-x-auto snap-x snap-mandatory hide-scrollbar scroll-px-4 md:scroll-px-0">
         ${top.map((d, i) => `
-        <article class="snap-center shrink-0 w-full relative h-60 md:h-72 lg:h-80 rounded-[1.75rem] overflow-hidden bg-slate-950 text-white" aria-roledescription="slide" aria-label="${i + 1} of ${top.length}">
+        <article class="snap-center shrink-0 w-full relative h-60 md:h-72 lg:h-80 rounded-2xl overflow-hidden bg-slate-950 text-white" aria-roledescription="slide" aria-label="${i + 1} of ${top.length}">
           ${d.imageUrl ? `<img src="${esc(d.imageUrl)}" alt="" class="absolute inset-y-0 right-0 w-[62%] h-full object-cover">`
             : `<div class="absolute inset-y-0 right-0 w-[62%] bg-gradient-to-br from-brand-700 to-slate-900 flex items-center justify-center text-7xl text-white/20" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></div>`}
           <div class="absolute inset-0 bg-gradient-to-r from-slate-950 from-35% via-slate-950/80 to-transparent" aria-hidden="true"></div>
           <div class="relative h-full flex flex-col justify-center gap-3 p-5 lg:p-12 max-w-[68%] lg:max-w-[50%]">
-            <span class="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-600/30 text-xs font-bold"><i class="fa-solid fa-fire-flame-curved text-brand-400" aria-hidden="true"></i> Trending now</span>
             <h2 class="text-[1.65rem] lg:text-5xl font-black leading-[1.1] tracking-tight line-clamp-2">${esc(d.title)}</h2>
             <p class="text-sm lg:text-base text-slate-200 flex items-center gap-2 min-w-0">
-              ${d.prepTime ? `<span class="shrink-0"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${esc(d.prepTime)}</span><span class="text-slate-500" aria-hidden="true">|</span>` : ''}
+              ${d.prepTime ? `<span class="shrink-0"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${esc(d.prepTime)}</span>` : ''}
               <span class="truncate"><i class="fa-solid fa-kitchen-set" aria-hidden="true"></i> ${esc(d.chef.kitchenName)}</span></p>
-            <button data-act="dish" data-id="${d.id}" class="self-start h-12 px-6 rounded-full bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-brand-600/30">View dish <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i></button>
+            <button data-act="dish" data-id="${d.id}" class="self-start h-12 px-6 rounded-full bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm flex items-center gap-2 shadow-lg">View dish</button>
           </div>
         </article>`).join('')}
       </div>
@@ -427,15 +427,15 @@ function dishCard(d) {
       ${!d.available ? `<span class="absolute bottom-2 left-2 chip bg-white/95 text-slate-700">Sold out today</span>` : ''}
     </div>
     <div class="p-3 lg:p-4 flex-1 flex flex-col gap-1.5">
-      <h3 class="font-bold text-slate-900 text-[15px] lg:text-base leading-snug line-clamp-2"><button data-act="dish" data-id="${d.id}" class="text-left hover:text-brand-700">${esc(d.title)}</button></h3>
-      <p class="text-xs text-slate-500 flex items-center gap-1.5 min-w-0">
-        ${d.prepTime ? `<span class="shrink-0"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${esc(d.prepTime)}</span><span class="text-slate-300" aria-hidden="true">|</span>` : ''}
-        <a href="#/chef/${d.chefId}" class="truncate hover:text-brand-700 py-3 -my-3">${esc(d.chef.kitchenName)}</a></p>
-      <div><span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-xs font-bold text-slate-800">${r.count ? `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${r.average.toFixed(1)}<span class="sr-only"> stars</span>` : 'New cook'}</span></div>
+      <h3 class="font-bold text-slate-900 text-[15px] lg:text-base leading-snug line-clamp-2"><button data-act="dish" data-id="${d.id}" class="block w-full text-left py-2.5 -my-2.5 hover:text-brand-700">${esc(d.title)}</button></h3>
+      <a href="#/chef/${d.chefId}" class="block text-sm text-slate-600 truncate hover:text-brand-700 py-3 -my-3">${esc(d.chef.kitchenName)}</a>
+      <p class="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 font-semibold text-slate-800">${r.count ? `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${r.average.toFixed(1)}<span class="sr-only"> stars</span>` : 'New cook'}</span>
+        ${d.prepTime ? `<span><i class="fa-regular fa-clock" aria-hidden="true"></i> ${esc(d.prepTime)}</span>` : ''}</p>
       <div class="mt-auto pt-1.5 flex items-center justify-between gap-2">
-        <span class="text-base lg:text-lg font-black text-slate-900">${money(d.price)}</span>
+        <span class="text-base lg:text-lg font-black text-slate-900 tabular-nums">${money(d.price)}</span>
         ${!d.available ? '' : inBasket ? stepperSm(d.id, inBasket) :
-          `<button data-act="add" data-id="${d.id}" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center shadow-md shadow-brand-600/25" aria-label="Add ${esc(d.title)} to basket"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>`}
+          `<button data-act="add" data-id="${d.id}" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center shadow-md" aria-label="Add ${esc(d.title)} to basket"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>`}
       </div>
     </div>
   </article>`;
@@ -471,20 +471,20 @@ async function openDish(id) {
     </div>
     <div class="p-5 space-y-4">
       <div>
-        <p class="text-xs font-bold text-brand-700 uppercase tracking-wide">${dishCats(d).map(esc).join(' · ')}${d.dietary ? ' · ' + esc(d.dietary) : ''}</p>
-        <h2 class="text-2xl font-black text-slate-900 leading-tight mt-1">${esc(d.title)}</h2>
+        <h2 class="text-2xl font-black text-slate-900 leading-tight">${esc(d.title)}</h2>
         <p class="text-sm text-slate-500 mt-2 flex items-center gap-2 flex-wrap">
-          ${d.prepTime ? `<span><i class="fa-regular fa-clock" aria-hidden="true"></i> Ready in ${esc(d.prepTime)}</span><span class="text-slate-300" aria-hidden="true">|</span>` : ''}
+          ${d.prepTime ? `<span><i class="fa-regular fa-clock" aria-hidden="true"></i> Ready in ${esc(d.prepTime)}</span>` : ''}
           <span>${r.count ? `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${r.average.toFixed(1)} (${r.count} review${r.count === 1 ? '' : 's'})` : 'New cook'}</span></p>
+        <ul class="flex flex-wrap gap-2 mt-3" aria-label="Categories">${[...dishCats(d), d.dietary].filter(Boolean).map(t => `<li class="chip bg-slate-100 text-slate-700">${esc(t)}</li>`).join('')}</ul>
       </div>
       <a href="#/chef/${d.chefId}" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200">
         ${avatar(c.avatarUrl, c.kitchenName, 'w-12 h-12 rounded-xl')}
         <span class="flex-1 min-w-0"><span class="block text-sm font-bold text-slate-900 truncate">${esc(c.kitchenName)}</span>
-          <span class="block text-xs text-slate-500 truncate"><i class="fa-solid fa-shield-halved text-emerald-600" aria-hidden="true"></i> Permit checked${c.neighborhood ? ' · ' + esc(c.neighborhood) : ''}</span></span>
-        <i class="fa-solid fa-chevron-right text-slate-400" aria-hidden="true"></i></a>
+          <span class="block text-sm text-slate-500 truncate">${meta(['<i class="fa-solid fa-shield-halved text-emerald-600" aria-hidden="true"></i> Permit checked', c.neighborhood ? esc(c.neighborhood) : ''])}</span></span>
+        <i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>
       ${d.description ? `<p class="text-[15px] text-slate-700 leading-relaxed">${esc(d.description)}</p>` : ''}
-      <p class="text-xs text-slate-500"><i class="fa-solid fa-person-walking" aria-hidden="true"></i> Pickup${c.offersDelivery ? ' or local delivery' : ' only'} · address shown after you order</p>
-      ${d.available ? `<button data-act="add-close" data-id="${d.id}" class="btn-primary !rounded-full !py-4 text-base"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add to basket · ${money(d.price)}</button>`
+      <p class="text-sm text-slate-500">Pickup${c.offersDelivery ? ' or local delivery' : ' only'}. The address is shown after you order.</p>
+      ${d.available ? `<button data-act="add-close" data-id="${d.id}" class="btn-primary !justify-between"><span>Add to basket</span><span class="tabular-nums">${money(d.price)}</span></button>`
         : `<p class="p-3 rounded-xl bg-slate-100 text-sm font-semibold text-slate-600 text-center">Sold out today. Save it and check back tomorrow.</p>`}
     </div>`, d.title);
 }
@@ -527,8 +527,8 @@ function renderFilterSheet() {
         <span><span class="block text-sm font-bold text-slate-900">Available today only</span><span class="block text-xs text-slate-500">Hide dishes that are sold out</span></span>
         <input type="checkbox" data-change="filter-avail" ${f.availableOnly ? 'checked' : ''} class="w-6 h-6 accent-blue-600"></label>
       <div class="grid grid-cols-2 gap-3">
-        <button data-act="filter-reset" class="btn-ghost !rounded-full">Reset</button>
-        <button data-act="close-sheet" class="btn-primary !rounded-full">Show ${count} dish${count === 1 ? '' : 'es'}</button>
+        <button data-act="filter-reset" class="btn-ghost">Reset</button>
+        <button data-act="close-sheet" class="btn-primary">Show ${count} dish${count === 1 ? '' : 'es'}</button>
       </div>
     </div>`;
 }
@@ -570,7 +570,6 @@ function addToBasket(id) {
   S.basket.items[id] = { qty: (cur?.qty || 0) + 1, title: d.title, price: d.price, imageUrl: d.imageUrl };
   saveBasket();
   if (navigator.vibrate) navigator.vibrate(10);
-  toast(`Added ${d.title.length > 30 ? d.title.slice(0, 30) + '…' : d.title}`);
   refreshShopLists();
   return true;
 }
@@ -606,16 +605,16 @@ async function chefView(id) {
           ${avatar(chef.avatarUrl, chef.kitchenName, 'w-16 h-16 rounded-2xl ring-4 ring-white')}
           <div class="min-w-0">
             <h1 class="text-lg font-black text-slate-900 leading-tight">${esc(chef.kitchenName)}</h1>
-            <p class="text-xs text-slate-500">${esc(chef.cuisine || 'Home cooking')}${chef.neighborhood ? ' · ' + esc(chef.neighborhood) : ''}</p>
+            <p class="text-sm text-slate-500">${meta([esc(chef.cuisine || 'Home cooking'), chef.neighborhood ? esc(chef.neighborhood) : ''])}</p>
             <p class="text-xs mt-0.5">${stars(chef.rating.average, chef.rating.count)}</p>
           </div>
         </div>
         ${chef.bio ? `<p class="text-sm text-slate-600 leading-relaxed mt-3">${esc(chef.bio)}</p>` : ''}
-        <div class="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2.5 text-xs">
+        <div class="mt-3 pt-3 border-t border-slate-200 flex items-center gap-2.5 text-sm">
           <i class="fa-solid fa-shield-halved text-emerald-700 text-base" aria-hidden="true"></i>
           <span class="text-emerald-900"><strong>Permit checked by Chefy.</strong> ${esc(chef.permitLabel || '')}</span>
         </div>
-        <p class="text-[11px] text-slate-500 mt-2"><i class="fa-solid fa-person-walking mr-1" aria-hidden="true"></i>Pickup${chef.offersDelivery ? ' or local delivery' : ' only'} · exact address shown after you order</p>
+        <p class="text-sm text-slate-500 mt-3">Pickup${chef.offersDelivery ? ' or local delivery' : ' only'}. The exact address is shown after you order.</p>
         ${!chef.live ? `<p class="mt-2 text-xs font-bold text-amber-700"><i class="fa-solid fa-moon mr-1" aria-hidden="true"></i>Not taking orders right now.</p>` : ''}
       </div>
       <div class="space-y-4 lg:pt-20">
@@ -627,7 +626,7 @@ async function chefView(id) {
           <div class="flex items-center justify-between text-xs"><span class="font-bold text-slate-800">${esc(r.name)}</span>
             <span class="text-amber-500" aria-label="${r.rating} out of 5 stars">${'★'.repeat(r.rating)}<span class="text-slate-300">${'★'.repeat(5 - r.rating)}</span></span></div>
           ${r.text ? `<p class="text-sm text-slate-600 mt-1">${esc(r.text)}</p>` : ''}
-          <p class="text-[10px] text-slate-400 mt-1">${timeAgo(r.at)}</p>
+          <p class="text-xs text-slate-500 mt-1">${timeAgo(r.at)}</p>
         </div>`).join('') : `<p class="text-sm text-slate-500">No reviews yet. Be the first to order.</p>`}
       </div>
     </section>`;
@@ -668,14 +667,14 @@ function renderBasketSheet() {
           <button data-act="fulfill" data-v="pickup" aria-pressed="${b.fulfillment === 'pickup'}" class="py-2.5 rounded-lg ${b.fulfillment === 'pickup' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}"><i class="fa-solid fa-person-walking mr-1" aria-hidden="true"></i> Pickup</button>
           <button data-act="fulfill" data-v="delivery" ${b.offersDelivery ? '' : 'disabled'} aria-pressed="${b.fulfillment === 'delivery'}" class="py-2.5 rounded-lg ${b.fulfillment === 'delivery' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'} disabled:text-slate-300"><i class="fa-solid fa-motorcycle mr-1" aria-hidden="true"></i> Delivery</button>
         </div>
-        ${!b.offersDelivery ? `<p class="text-[11px] text-slate-500 mt-1.5">This cook offers pickup only.</p>` : ''}
+        ${!b.offersDelivery ? `<p class="text-xs text-slate-500 mt-1.5">This cook offers pickup only.</p>` : ''}
       </fieldset>
       ${b.fulfillment === 'delivery' ? `<div><label class="label" for="bAddr">Delivery address</label>
         <input id="bAddr" data-input="basket-address" autocomplete="street-address" value="${esc(b.address)}" class="field" placeholder="Street, apartment, buzzer"></div>` : ''}
-      <div><label class="label" for="bNotes">Note for the cook <span class="font-normal text-slate-400">(optional)</span></label>
+      <div><label class="label" for="bNotes">Note for the cook <span class="font-normal text-slate-500">(optional)</span></label>
         <textarea id="bNotes" data-input="basket-notes" rows="2" maxlength="300" class="field" placeholder="Allergies, extra salsa, pickup time…">${esc(b.notes)}</textarea></div>
       <fieldset>
-        <legend class="label">Tip for the cook <span class="font-normal text-slate-400">· 100% goes to them</span></legend>
+        <legend class="label">Tip for the cook <span class="font-normal text-slate-500">(100% goes to them)</span></legend>
         <div class="grid grid-cols-5 gap-2">
           ${(S.config.tipOptions || [0, 10, 15, 20, 25]).map(p => `<button data-act="tip" data-v="${p}" aria-pressed="${b.tip === p}" class="h-11 rounded-xl text-xs font-bold border ${b.tip === p ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600'}">${p ? p + '%' : 'None'}</button>`).join('')}
         </div>
@@ -686,8 +685,8 @@ function renderBasketSheet() {
         <div class="flex justify-between text-slate-600"><dt>Tip</dt><dd>${money(t.tip)}</dd></div>
         <div class="flex justify-between font-black text-slate-900 text-base pt-1.5 border-t border-slate-100"><dt>Total</dt><dd>${money(t.total)}</dd></div>
       </dl>
-      <form data-form="checkout">${errorBox()}<button class="btn-primary mt-3" type="submit"><i class="fa-solid fa-lock text-xs" aria-hidden="true"></i> Checkout · ${money(t.total)}</button></form>
-      <p class="text-[11px] text-center text-slate-500"><i class="fa-solid fa-shield-halved mr-1" aria-hidden="true"></i>Your card is held, not charged, until the cook marks your food ready.</p>
+      <form data-form="checkout">${errorBox()}<button class="btn-primary mt-3 !justify-between" type="submit"><span>Checkout</span><span class="tabular-nums">${money(t.total)}</span></button></form>
+      <p class="text-xs text-center text-slate-500"><i class="fa-solid fa-shield-halved mr-1" aria-hidden="true"></i>Your card is held, not charged, until the cook marks your food ready.</p>
     </div>`;
 }
 
@@ -712,24 +711,24 @@ async function startCheckout(form) {
 
 async function openPaymentSheet(order, clientSecret) {
   const stripeMode = S.config.payments.mode === 'stripe';
-  openSheet(sheetHeader('Pay securely', `Order ${esc(order.code)} · ${esc(order.chef.kitchenName)}`) + `
+  openSheet(sheetHeader('Pay securely', `${esc(order.chef.kitchenName)}, order ${esc(order.code)}`) + `
     <form data-form="pay" class="p-5 space-y-4" novalidate>
       <div class="p-4 rounded-2xl bg-brand-50 border border-brand-100">
         <div class="flex items-center justify-between"><span class="text-xs font-semibold text-slate-600">Amount held today</span><span class="text-2xl font-black text-slate-900">${money(order.total)}</span></div>
-        <p class="text-[11px] text-slate-600 mt-1">Charged only when the cook marks your order ready. Released if they decline.</p>
+        <p class="text-xs text-slate-600 mt-1">Charged only when the cook marks your order ready. Released if they decline.</p>
       </div>
       ${stripeMode ? `<div id="payment-element" class="min-h-[160px]"><div class="skeleton h-40"></div></div>` : `
         <div class="space-y-3">
           <div><label class="label" for="ccName">Name on card</label><input id="ccName" name="name" autocomplete="cc-name" class="field" placeholder="Full name"></div>
           <div><label class="label" for="ccNumber">Card number</label>
             <div class="relative"><input id="ccNumber" name="number" data-input="cc-number" autocomplete="cc-number" inputmode="numeric" class="field pr-12 tracking-wider" placeholder="1234 5678 9012 3456">
-            <i id="ccBrand" class="fa-regular fa-credit-card absolute right-4 top-1/2 -translate-y-1/2 text-xl text-slate-400" aria-hidden="true"></i></div></div>
+            <i id="ccBrand" class="fa-regular fa-credit-card absolute right-4 top-1/2 -translate-y-1/2 text-xl text-slate-500" aria-hidden="true"></i></div></div>
           <div class="grid grid-cols-3 gap-3">
             <div><label class="label" for="ccExp">Expiry</label><input id="ccExp" name="exp" data-input="cc-exp" autocomplete="cc-exp" inputmode="numeric" class="field" placeholder="MM/YY"></div>
             <div><label class="label" for="ccCvc">CVC</label><input id="ccCvc" name="cvc" data-input="digits" autocomplete="cc-csc" inputmode="numeric" maxlength="4" class="field" placeholder="123"></div>
             <div><label class="label" for="ccZip">ZIP</label><input id="ccZip" name="zip" data-input="digits" autocomplete="postal-code" inputmode="numeric" maxlength="5" class="field" placeholder="94110"></div>
           </div>
-          <p class="p-3 bg-sky-50 border border-sky-100 rounded-xl text-[11px] text-sky-900"><strong>Demo payments — no real charge.</strong> Use 4242 4242 4242 4242 with any future date. 4000 0000 0000 0002 is declined.</p>
+          <p class="p-3 bg-sky-50 border border-sky-100 rounded-xl text-xs text-sky-900"><strong>Demo payments. No real charge.</strong> Use 4242 4242 4242 4242 with any future date. 4000 0000 0000 0002 is declined.</p>
         </div>`}
       ${errorBox()}
       <button class="btn-dark" type="submit" ${stripeMode ? 'disabled' : ''}><i class="fa-solid fa-lock text-xs" aria-hidden="true"></i> Pay ${money(order.total)}</button>
@@ -743,7 +742,7 @@ async function openPaymentSheet(order, clientSecret) {
   if (stripeMode) {
     try {
       await loadStripe();
-      S.elements = S.stripe.elements({ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#006be6', borderRadius: '12px', fontFamily: 'Inter, system-ui, sans-serif' } } });
+      S.elements = S.stripe.elements({ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || 'rgb(0 107 230)', borderRadius: '10px', fontFamily: 'Inter, system-ui, sans-serif' } } });
       const pe = S.elements.create('payment', { layout: 'tabs' });
       pe.mount('#payment-element');
       pe.on('ready', () => { const b = $('form[data-form="pay"] button[type="submit"]'); if (b) b.disabled = false; });
@@ -760,7 +759,7 @@ function loadStripe() {
     document.head.appendChild(s);
   });
 }
-const BRANDS = { visa: ['Visa', 'fa-brands fa-cc-visa text-blue-700'], mastercard: ['Mastercard', 'fa-brands fa-cc-mastercard text-orange-600'], amex: ['Amex', 'fa-brands fa-cc-amex text-sky-600'], discover: ['Discover', 'fa-brands fa-cc-discover text-amber-600'], card: ['Card', 'fa-regular fa-credit-card text-slate-400'] };
+const BRANDS = { visa: ['Visa', 'fa-brands fa-cc-visa text-blue-700'], mastercard: ['Mastercard', 'fa-brands fa-cc-mastercard text-orange-600'], amex: ['Amex', 'fa-brands fa-cc-amex text-sky-600'], discover: ['Discover', 'fa-brands fa-cc-discover text-amber-600'], card: ['Card', 'fa-regular fa-credit-card text-slate-500'] };
 function cardBrand(d) {
   if (/^4/.test(d)) return 'visa';
   if (/^(5[1-5]|2[2-7])/.test(d)) return 'mastercard';
@@ -794,7 +793,7 @@ async function submitPayment(form) {
     if ((v.zip || '').length !== 5) return showError(form, 'Enter your 5-digit billing ZIP.');
     setBusy(btn, true, 'Checking your card…');
     await new Promise(r => setTimeout(r, 900));
-    if (digits === '4000000000000002') { setBusy(btn, false); return showError(form, 'Your card was declined. No charge was made — try another card.'); }
+    if (digits === '4000000000000002') { setBusy(btn, false); return showError(form, 'Your card was declined. No charge was made. Try another card.'); }
     demoCard = { brand: BRANDS[brand][0], last4: digits.slice(-4) };
   }
   try {
@@ -842,7 +841,7 @@ async function ordersView() {
     <a href="#/orders/${esc(o.code)}" class="card p-4 block space-y-2 transition-shadow">
       <div class="flex items-center gap-3">
         ${avatar(o.chef.avatarUrl, o.chef.kitchenName)}
-        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 truncate">${esc(o.chef.kitchenName)}</p><p class="text-[11px] text-slate-500">${esc(o.code)} · ${timeAgo(o.times.created)}</p></div>
+        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 truncate">${esc(o.chef.kitchenName)}</p><p class="text-xs text-slate-500">${meta([esc(o.code), timeAgo(o.times.created)])}</p></div>
         <span class="text-sm font-black text-slate-900">${money(o.total)}</span>
       </div>
       <p class="text-xs text-slate-600 line-clamp-1">${o.items.map(i => `${i.qty}× ${esc(i.title)}`).join(', ')}</p>
@@ -865,31 +864,31 @@ async function orderView(code, query) {
   const closed = ['declined', 'canceled'].includes(o.status);
   view.innerHTML = `
     <div class="lg:max-w-2xl lg:mx-auto">
-    <a href="#/orders" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 mb-3 h-11"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All orders</a>
+    <a href="#/orders" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 mb-3 h-11">Back to orders</a>
     <section class="space-y-4">
       <div class="card p-4">
         <div class="flex items-center gap-3">
           ${avatar(o.chef.avatarUrl, o.chef.kitchenName, 'w-12 h-12 rounded-xl')}
-          <div class="flex-1 min-w-0"><h1 class="text-base font-black text-slate-900 truncate">${esc(o.chef.kitchenName)}</h1><p class="text-[11px] text-slate-500">Order ${esc(o.code)} · ${new Date(o.times.created).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>
+          <div class="flex-1 min-w-0"><h1 class="text-base font-black text-slate-900 truncate">${esc(o.chef.kitchenName)}</h1><p class="text-xs text-slate-500">${meta(['Order ' + esc(o.code), new Date(o.times.created).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })])}</p></div>
           ${statusChip(o)}
         </div>
-        ${closed ? `<p class="mt-3 p-3 rounded-xl bg-rose-50 text-rose-800 text-xs font-semibold">${o.status === 'declined' ? 'The cook couldn\'t take this order.' : 'This order was cancelled.'} The hold on your card was released — you weren't charged.</p>` : `
+        ${closed ? `<p class="mt-3 pl-3 border-l-2 border-rose-400 text-rose-800 text-sm font-semibold">${o.status === 'declined' ? 'The cook couldn\'t take this order.' : 'This order was cancelled.'} The hold on your card was released, so you weren't charged.</p>` : `
         <ol class="mt-4 grid grid-cols-4 gap-1" aria-label="Order progress">
           ${steps.map(([label, ts], i) => `<li class="text-center">
             <div class="h-1.5 rounded-full ${i < reached ? 'bg-emerald-500' : 'bg-slate-200'}"></div>
-            <p class="text-[10px] font-bold mt-1.5 ${i < reached ? 'text-slate-900' : 'text-slate-400'}">${label}</p>
-            <p class="text-[10px] text-slate-400">${ts ? clock(ts) : ''}</p></li>`).join('')}
+            <p class="text-xs font-bold mt-1.5 ${i < reached ? 'text-slate-900' : 'text-slate-500'}">${label}</p>
+            <p class="text-xs text-slate-500">${ts ? clock(ts) : ''}</p></li>`).join('')}
         </ol>`}
       </div>
 
       ${!closed && o.fulfillment === 'pickup' && o.chef.pickupAddress ? `
       <div class="card p-4 space-y-1.5">
-        <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Pickup</p>
+        <p class="text-sm font-semibold text-slate-500">Pickup</p>
         <p class="text-sm font-bold text-slate-900">${esc(o.chef.pickupAddress)}</p>
         ${o.chef.pickupNotes ? `<p class="text-xs text-slate-600">${esc(o.chef.pickupNotes)}</p>` : ''}
         <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.chef.pickupAddress)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 h-11"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i> Open in Maps</a>
       </div>` : ''}
-      ${o.fulfillment === 'delivery' ? `<div class="card p-4"><p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Delivering to</p><p class="text-sm font-bold text-slate-900 mt-1">${esc(o.deliveryAddress)}</p></div>` : ''}
+      ${o.fulfillment === 'delivery' ? `<div class="card p-4"><p class="text-xs font-bold text-slate-500">Delivering to</p><p class="text-sm font-bold text-slate-900 mt-1">${esc(o.deliveryAddress)}</p></div>` : ''}
 
       <div class="card p-4 space-y-2">
         ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-slate-700">${i.qty}× ${esc(i.title)}</span><span class="font-semibold">${money(i.price * i.qty)}</span></div>`).join('')}
@@ -902,10 +901,10 @@ async function orderView(code, query) {
         <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
           <span class="text-slate-600"><i class="fa-regular fa-credit-card mr-1" aria-hidden="true"></i>${esc(o.payment.label || 'Card')}</span>${payChip(o.payment)}
         </div>
-        ${o.payment.status === 'authorized' ? `<p class="text-[11px] text-slate-500">${money(o.total)} is held on your card. You're charged when the cook marks it ready.</p>` : ''}
+        ${o.payment.status === 'authorized' ? `<p class="text-xs text-slate-500">${money(o.total)} is held on your card. You're charged when the cook marks it ready.</p>` : ''}
       </div>
 
-      ${o.issue ? `<div class="card p-4 border-rose-200 bg-rose-50/50 text-xs space-y-1"><p class="font-bold text-rose-900"><i class="fa-solid fa-flag mr-1" aria-hidden="true"></i>Problem reported · ${esc({ open: 'under review', refunded: 'refunded in full', dismissed: 'closed' }[o.issue.status] || o.issue.status)}</p><p class="text-rose-800">“${esc(o.issue.reason)}”</p></div>` : ''}
+      ${o.issue ? `<div class="card p-4 border-rose-200 bg-rose-50/50 text-xs space-y-1"><p class="font-bold text-rose-900">Problem reported: ${esc({ open: 'under review', refunded: 'refunded in full', dismissed: 'closed' }[o.issue.status] || o.issue.status)}</p><p class="text-rose-800">“${esc(o.issue.reason)}”</p></div>` : ''}
 
       ${o.canReview ? `
       <form data-form="review" data-code="${esc(o.code)}" class="card p-4 space-y-3">
@@ -968,22 +967,22 @@ async function kitchenView(query) {
           ${avatar(c.avatarUrl, c.kitchenName, 'w-14 h-14 rounded-2xl')}
           <div class="flex-1 min-w-0">
             <h1 class="text-lg font-black text-slate-900 leading-tight truncate">${esc(c.kitchenName)}</h1>
-            <p class="text-[11px] text-slate-500">${stars(sum.rating.average, sum.rating.count)}${c.neighborhood ? ' · ' + esc(c.neighborhood) : ''}</p>
+            <p class="text-sm text-slate-500">${meta([stars(sum.rating.average, sum.rating.count), c.neighborhood ? esc(c.neighborhood) : ''])}</p>
           </div>
           <a href="#/kitchen/setup?step=1" class="w-11 h-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600" aria-label="Edit kitchen profile"><i class="fa-solid fa-pen" aria-hidden="true"></i></a>
         </div>
         ${setupDone ? `
-        <label class="flex items-center justify-between gap-3 p-3 rounded-xl ${c.acceptingOrders ? 'bg-emerald-50 border border-emerald-200' : 'bg-slate-100 border border-slate-200'}">
+        <label class="flex items-center justify-between gap-3 pt-3 border-t border-slate-200">
           <span class="text-xs"><strong class="block text-sm ${c.acceptingOrders ? 'text-emerald-900' : 'text-slate-700'}">${c.acceptingOrders ? 'Open for orders' : 'Kitchen paused'}</strong>
             <span class="${c.acceptingOrders ? 'text-emerald-800' : 'text-slate-500'}">${c.acceptingOrders ? 'Your dishes are visible to customers.' : 'Customers can see your menu but can\'t order.'}</span></span>
           <input type="checkbox" data-change="accepting" ${c.acceptingOrders ? 'checked' : ''} class="w-6 h-6 accent-emerald-600" aria-label="Accepting orders">
         </label>` : `
-        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+        <div class="pt-3 border-t border-slate-200 space-y-1">
           <p class="text-sm font-bold text-amber-950">Finish setup to go live</p>
           ${steps.map(([label, ok, step, note]) => `<a href="#/kitchen/setup?step=${step}" class="flex items-center gap-2.5 text-xs h-9">
             <i class="fa-solid ${ok ? 'fa-circle-check text-emerald-600' : 'fa-circle text-amber-300'} text-base" aria-hidden="true"></i>
             <span class="flex-1 ${ok ? 'text-slate-500 line-through' : 'font-bold text-slate-900'}">${label}</span>
-            ${note && !ok ? `<span class="text-amber-800">${note}</span>` : ''}${ok ? '' : '<i class="fa-solid fa-chevron-right text-slate-400" aria-hidden="true"></i>'}</a>`).join('')}
+            ${note && !ok ? `<span class="text-amber-800">${note}</span>` : ''}${ok ? '' : '<i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i>'}</a>`).join('')}
         </div>`}
       </div>
 
@@ -992,7 +991,7 @@ async function kitchenView(query) {
            ['Active orders', sum.stats.activeOrders, newCount ? `${newCount} new` : 'All handled'],
            ['Dishes', sum.stats.dishes, `${sum.stats.liveDishes} available`],
            ['Balance', sum.balance ? money(sum.balance.available) : '—', 'Ready to cash out']]
-          .map(([l, v, s]) => `<div class="snap-start shrink-0 w-36 md:w-auto card p-3.5 md:p-4 lg:p-5"><p class="text-[11px] font-semibold text-slate-500">${l}</p><p class="text-xl font-black text-slate-900 mt-0.5">${v}</p><p class="text-[10px] text-slate-500">${s}</p></div>`).join('')}
+          .map(([l, v, s]) => `<div class="snap-start shrink-0 w-36 md:w-auto card p-3.5 md:p-4 lg:p-5"><p class="text-xs font-semibold text-slate-500">${l}</p><p class="text-xl font-black text-slate-900 mt-0.5">${v}</p><p class="text-xs text-slate-500">${s}</p></div>`).join('')}
       </div>
 
       <div class="grid grid-cols-3 p-1 bg-slate-100 rounded-xl text-xs lg:text-sm font-bold sticky z-20 md:max-w-md lg:top-20" style="top: calc(3.5rem + env(safe-area-inset-top) + .5rem)" role="tablist">
@@ -1012,16 +1011,16 @@ function ordersTab(orders) {
     <article class="card p-4 space-y-3 ${o.status === 'received' ? 'ring-2 ring-brand-500' : ''}">
       <div class="flex items-start justify-between gap-2">
         <div><p class="text-sm font-black text-slate-900">${esc(o.eater.name)}</p>
-          <p class="text-[11px] text-slate-500">${esc(o.code)} · ${timeAgo(o.times.created)} · ${o.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'}</p></div>
+          <p class="text-xs text-slate-500">${meta([esc(o.code), timeAgo(o.times.created), o.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'])}</p></div>
         <span class="chip ${cls}"><i class="fa-solid ${icon}" aria-hidden="true"></i> ${label}</span>
       </div>
       <div class="space-y-1">${o.items.map(i => `<div class="flex justify-between text-sm"><span>${i.qty}× ${esc(i.title)}</span><span class="font-semibold">${money(i.price * i.qty)}</span></div>`).join('')}</div>
-      ${o.notes ? `<p class="text-xs p-2.5 bg-amber-50 rounded-lg text-amber-900"><i class="fa-solid fa-note-sticky mr-1" aria-hidden="true"></i>${esc(o.notes)}</p>` : ''}
+      ${o.notes ? `<p class="text-sm pl-3 border-l-2 border-amber-400 text-amber-900"><i class="fa-solid fa-note-sticky mr-1" aria-hidden="true"></i>${esc(o.notes)}</p>` : ''}
       ${o.fulfillment === 'delivery' ? `<p class="text-xs text-slate-700"><i class="fa-solid fa-location-dot text-brand-600 mr-1" aria-hidden="true"></i>${esc(o.deliveryAddress)}</p>` : ''}
       ${o.eater.phone ? `<a href="tel:${esc(o.eater.phone)}" class="text-xs font-bold text-brand-700 inline-flex items-center gap-1 h-9"><i class="fa-solid fa-phone" aria-hidden="true"></i> ${esc(o.eater.phone)}</a>` : ''}
-      ${o.issue && o.issue.status === 'open' ? `<p class="text-xs p-2.5 bg-rose-50 rounded-lg text-rose-800"><strong>Customer reported a problem:</strong> ${esc(o.issue.reason)}</p>` : ''}
+      ${o.issue && o.issue.status === 'open' ? `<p class="text-sm pl-3 border-l-2 border-rose-400 text-rose-800"><strong>Customer reported a problem:</strong> ${esc(o.issue.reason)}</p>` : ''}
       <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-        <span class="text-slate-600">You earn <strong class="text-emerald-700">${money(o.chefPayout)}</strong> <span class="text-slate-400">(${money(o.total)} total)</span></span>${payChip(o.payment)}
+        <span class="text-slate-600">You earn <strong class="text-emerald-700">${money(o.chefPayout)}</strong> <span class="text-slate-500">(${money(o.total)} total)</span></span>${payChip(o.payment)}
       </div>
       <div class="flex gap-2">
         ${o.status === 'received' ? act('decline', 'Decline', 'border border-rose-200 text-rose-700') + act('accept', 'Accept &amp; start', 'bg-brand-600 text-white') : ''}
@@ -1029,7 +1028,7 @@ function ordersTab(orders) {
         ${o.status === 'ready' ? act('complete', o.fulfillment === 'delivery' ? 'Delivered' : 'Picked up', 'bg-slate-900 text-white') : ''}
         ${['ready', 'completed'].includes(o.status) && o.payment.status === 'captured' ? act('refund', 'Refund', 'border border-slate-200 text-slate-700') : ''}
       </div>
-      ${o.status === 'preparing' ? `<p class="text-[10px] text-slate-500">Marking ready charges the customer's card.</p>` : ''}
+      ${o.status === 'preparing' ? `<p class="text-xs text-slate-500">Marking ready charges the customer's card.</p>` : ''}
     </article>`; }).join('')}</div>`;
 }
 
@@ -1039,8 +1038,8 @@ function menuTab(dishes) {
     ${dishes.length ? `<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 lg:gap-4">${dishes.map(d => `
       <div class="card p-3 flex gap-3 items-center">
         ${dishImg(d.imageUrl, 'w-16 h-16 rounded-xl shrink-0')}
-        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(d.title)}</p><p class="text-xs text-brand-700 font-bold">${money(d.price)} <span class="text-slate-400 font-medium">· ${dishCats(d).map(esc).join(', ')}</span></p>
-          <label class="mt-1 inline-flex items-center gap-2 text-[11px] font-bold ${d.available ? 'text-emerald-700' : 'text-slate-500'}">
+        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(d.title)}</p><p class="text-xs text-brand-700 font-bold">${money(d.price)} <span class="text-slate-500 font-normal ml-2">${dishCats(d).map(esc).join(', ')}</span></p>
+          <label class="mt-1 inline-flex items-center gap-2 text-xs font-bold ${d.available ? 'text-emerald-700' : 'text-slate-500'}">
             <input type="checkbox" data-change="dish-available" data-id="${d.id}" ${d.available ? 'checked' : ''} class="w-5 h-5 accent-emerald-600"> ${d.available ? 'Available' : 'Sold out'}</label></div>
         <button data-act="dish-edit" data-id="${d.id}" class="w-11 h-11 rounded-xl border border-slate-200 text-slate-600" aria-label="Edit ${esc(d.title)}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
       </div>`).join('')}</div>` : stateCard('fa-utensils', 'Your menu is empty', 'Add the dish you\'re known for. A good photo and a clear price sell the most.')}`;
@@ -1055,16 +1054,16 @@ function payoutsTab(sum) {
       <div class="rounded-2xl p-5 lg:p-6 bg-gradient-to-br from-slate-900 to-brand-950 text-white">
         <p class="text-xs font-semibold text-slate-300">Available to cash out</p>
         <p class="text-3xl font-black mt-1">${money(b.available)}</p>
-        <p class="text-[11px] text-brand-200 mt-1">${money(b.held)} more is held on customers' cards for orders in progress.</p>
+        <p class="text-xs text-brand-200 mt-1">${money(b.held)} more is held on customers' cards for orders in progress.</p>
       </div>
       ${c.payouts.ready ? `
       <div class="grid grid-cols-2 gap-2">
-        <button data-act="payout" data-instant="0" ${b.available > 0 ? '' : 'disabled'} class="card p-3 text-left disabled:opacity-50">
+        <button data-act="payout" data-instant="0" ${b.available > 0 ? '' : 'disabled'} class="card p-3 text-left">
           <p class="text-xs font-bold text-slate-900"><i class="fa-solid fa-building-columns text-brand-600 mr-1" aria-hidden="true"></i>Standard</p>
-          <p class="text-[11px] text-slate-500 mt-0.5">Free · 1–2 business days</p></button>
-        <button data-act="payout" data-instant="1" ${b.available > 0 ? '' : 'disabled'} class="card p-3 text-left disabled:opacity-50">
+          <p class="text-xs text-slate-500 mt-0.5">Free, arrives in 1–2 business days</p></button>
+        <button data-act="payout" data-instant="1" ${b.available > 0 ? '' : 'disabled'} class="card p-3 text-left">
           <p class="text-xs font-bold text-slate-900"><i class="fa-solid fa-bolt text-amber-500 mr-1" aria-hidden="true"></i>Instant</p>
-          <p class="text-[11px] text-slate-500 mt-0.5">${demo ? '1.5% fee · minutes' : 'To a debit card · minutes'}</p></button>
+          <p class="text-xs text-slate-500 mt-0.5">${demo ? '1.5% fee, arrives in minutes' : 'To a debit card, in minutes'}</p></button>
       </div>
       <div class="card p-4 flex items-center gap-3">
         <span class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600"><i class="fa-solid fa-building-columns" aria-hidden="true"></i></span>
@@ -1077,13 +1076,13 @@ function payoutsTab(sum) {
       </div>
       <div class="card p-4 lg:p-5">
         <p class="text-sm font-bold text-slate-900 mb-1">Activity</p>
-        <p class="text-[11px] text-slate-500 mb-2">Chefy keeps 10% of food sales. Tips are 100% yours.</p>
+        <p class="text-xs text-slate-500 mb-2">Chefy keeps 10% of food sales. Tips are 100% yours.</p>
         ${sum.ledger.length ? `<div class="divide-y divide-slate-100">${sum.ledger.map(e => `
           <div class="flex items-center gap-3 py-2.5">
             <span class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${e.kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : e.kind === 'refund' ? 'bg-rose-50 text-rose-600' : 'bg-brand-50 text-brand-700'}">
               <i class="fa-solid ${e.kind === 'sale' ? 'fa-arrow-down' : e.kind === 'refund' ? 'fa-rotate-left' : 'fa-building-columns'} text-xs" aria-hidden="true"></i></span>
-            <div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-900 truncate">${esc(e.title)}</p><p class="text-[11px] text-slate-500 truncate">${esc(e.detail)}</p></div>
-            <div class="text-right"><p class="text-xs font-black ${e.amount > 0 ? 'text-emerald-700' : 'text-slate-900'}">${e.amount > 0 ? '+' : ''}${money(e.amount)}</p><p class="text-[10px] text-slate-400">${timeAgo(e.at)}</p></div>
+            <div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-900 truncate">${esc(e.title)}</p><p class="text-xs text-slate-500 truncate">${esc(e.detail)}</p></div>
+            <div class="text-right"><p class="text-xs font-black ${e.amount > 0 ? 'text-emerald-700' : 'text-slate-900'}">${e.amount > 0 ? '+' : ''}${money(e.amount)}</p><p class="text-xs text-slate-500">${timeAgo(e.at)}</p></div>
           </div>`).join('')}</div>` : `<p class="text-xs text-slate-500 py-3">Charged orders, refunds and payouts will show up here.</p>`}
       </div>
     </div>`;
@@ -1111,7 +1110,7 @@ function dishForm(d = {}, { submitLabel = 'Save dish', formName = 'dish' } = {})
       </div>
       <div><label class="label" for="dTitle">Dish name</label><input id="dTitle" name="title" required maxlength="80" value="${esc(d.title || '')}" class="field" placeholder="e.g. Pork red chile tamales (3 pack)"></div>
       <fieldset>
-        <legend class="label">Categories <span class="font-normal text-slate-500">· pick up to 3</span></legend>
+        <legend class="label">Categories <span class="font-normal text-slate-500">(up to 3)</span></legend>
         <div class="flex flex-wrap gap-2">${cats.map(c => `<label class="cursor-pointer">
           <input type="checkbox" name="categories" value="${esc(c)}" data-change="cat-limit" class="peer sr-only" ${(d.id ? dishCats(d) : []).includes(c) ? 'checked' : ''}>
           <span class="h-10 px-3.5 rounded-full text-sm font-bold flex items-center gap-1.5 bg-slate-100 text-slate-800 peer-checked:bg-brand-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500"><i class="fa-solid ${CAT_ICONS[c] || 'fa-utensils'}" aria-hidden="true"></i>${esc(c)}</span></label>`).join('')}</div>
@@ -1179,8 +1178,8 @@ async function setupView(query) {
   const titles = ['Your kitchen', 'Food handler permit', 'Get paid', 'First dish'];
   const head = `
     <div class="mb-4">
-      <a href="#/kitchen" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 h-11"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Kitchen</a>
-      <p class="text-[11px] font-bold text-brand-700 uppercase tracking-wide">Step ${step} of 4</p>
+      <a href="#/kitchen" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 h-11">Back to kitchen</a>
+      <p class="text-xs font-bold text-brand-700">Step ${step} of 4</p>
       <h1 class="text-xl font-black text-slate-900">${titles[step - 1]}</h1>
       <div class="grid grid-cols-4 gap-1 mt-2" aria-hidden="true">${[1, 2, 3, 4].map(i => `<div class="h-1.5 rounded-full ${i <= step ? 'bg-brand-600' : 'bg-slate-200'}"></div>`).join('')}</div>
     </div>`;
@@ -1200,7 +1199,7 @@ async function setupView(query) {
         <div><label class="label" for="kBio">Your story</label><textarea id="kBio" name="bio" rows="3" maxlength="600" class="field" placeholder="Where your recipes come from and what makes them yours">${esc(c?.bio || '')}</textarea></div>
         <div><label class="label" for="kHood">Neighborhood</label><input id="kHood" name="neighborhood" maxlength="60" value="${esc(c?.neighborhood || S.me.user.neighborhood || '')}" class="field" placeholder="e.g. Mission District"></div>
         <div><label class="label" for="kAddr">Pickup address</label><input id="kAddr" name="pickupAddress" required autocomplete="street-address" maxlength="200" value="${esc(c?.pickupAddress || '')}" class="field" placeholder="Street and number"></div>
-        <div><label class="label" for="kNotes">Pickup instructions <span class="font-normal text-slate-400">(optional)</span></label><input id="kNotes" name="pickupNotes" maxlength="300" value="${esc(c?.pickupNotes || '')}" class="field" placeholder="e.g. Ring #2, I'll come down. Pickup 4–7pm."></div>
+        <div><label class="label" for="kNotes">Pickup instructions <span class="font-normal text-slate-500">(optional)</span></label><input id="kNotes" name="pickupNotes" maxlength="300" value="${esc(c?.pickupNotes || '')}" class="field" placeholder="e.g. Ring #2, I'll come down. Pickup 4–7pm."></div>
         <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 text-sm"><input type="checkbox" name="offersDelivery" ${c?.offersDelivery ? 'checked' : ''} class="w-5 h-5 accent-blue-600"> I can deliver nearby myself</label>
         ${errorBox()}
         <button class="btn-primary" type="submit">${c ? 'Save' : 'Save and continue'}</button>
@@ -1221,9 +1220,9 @@ async function setupView(query) {
         <div><label class="label" for="pExp">Expires</label><input id="pExp" name="expiry" type="date" required value="${esc(p.expiry || '')}" class="field"></div>
         <div><span class="label">Photo or PDF of the permit</span>
           <label class="block border-2 border-dashed border-slate-300 rounded-2xl p-5 text-center cursor-pointer bg-slate-50">
-            <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400" aria-hidden="true"></i>
-            <p id="permitFileLabel" class="text-sm font-bold text-slate-700 mt-1">${p.hasFile ? 'File on record · tap to replace' : 'Take a photo or choose a file'}</p>
-            <p class="text-[11px] text-slate-500">JPG, PNG or PDF up to 8 MB. Only Chefy staff can see it.</p>
+            <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500" aria-hidden="true"></i>
+            <p id="permitFileLabel" class="text-sm font-bold text-slate-700 mt-1">${p.hasFile ? 'File on record. Tap to replace it.' : 'Take a photo or choose a file'}</p>
+            <p class="text-xs text-slate-500">JPG, PNG or PDF up to 8 MB. Only Chefy staff can see it.</p>
             <input type="file" accept="image/*,application/pdf" data-change="upload-permit" class="sr-only"></label>
           <input type="hidden" name="file" id="permitFile" value=""></div>
         ${errorBox()}
@@ -1241,7 +1240,7 @@ async function setupView(query) {
           <div><label class="label" for="bRouting">Routing number</label><input id="bRouting" name="routing" inputmode="numeric" maxlength="9" required class="field" placeholder="9 digits"></div>
           <div><label class="label" for="bAccount">Account number</label><input id="bAccount" name="account" inputmode="numeric" maxlength="17" required class="field" placeholder="Account"></div>
         </div>
-        <p class="text-[11px] text-slate-500">Demo payments mode: only the last 4 digits are stored. With Stripe connected, bank details are collected by Stripe and never touch Chefy.</p>
+        <p class="text-xs text-slate-500">Demo payments mode: only the last 4 digits are stored. With Stripe connected, bank details are collected by Stripe and never touch Chefy.</p>
         ${errorBox()}
         <button class="btn-primary" type="submit">${c.payouts.ready ? 'Update bank account' : 'Save and continue'}</button>
         ${c.payouts.ready ? `<a href="#/kitchen/setup?step=4" class="btn-ghost">Next: first dish</a>` : ''}
@@ -1277,16 +1276,16 @@ async function accountView() {
       <form data-form="profile" class="card p-4 space-y-3" novalidate>
         <div><label class="label" for="uName">Name</label><input id="uName" name="name" required maxlength="80" autocomplete="name" value="${esc(u.name)}" class="field"></div>
         <div><label class="label" for="uHood">Neighborhood</label><input id="uHood" name="neighborhood" maxlength="80" value="${esc(u.neighborhood || '')}" class="field" placeholder="e.g. Mission District"></div>
-        <div><label class="label" for="uPhone">Phone <span class="font-normal text-slate-400">(shared with cooks you order from)</span></label><input id="uPhone" name="phone" type="tel" autocomplete="tel" maxlength="30" value="${esc(u.phone || '')}" class="field"></div>
+        <div><label class="label" for="uPhone">Phone <span class="font-normal text-slate-500">(shared with cooks you order from)</span></label><input id="uPhone" name="phone" type="tel" autocomplete="tel" maxlength="30" value="${esc(u.phone || '')}" class="field"></div>
         ${errorBox()}<button class="btn-dark" type="submit">Save changes</button>
       </form>
       <div class="card divide-y divide-slate-100">
-        <a href="#/kitchen" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-kitchen-set text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">${S.me.chef ? 'My kitchen' : 'Cook on Chefy'}</span><i class="fa-solid fa-chevron-right text-slate-400" aria-hidden="true"></i></a>
-        ${u.isAdmin ? `<a href="#/admin" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-user-shield text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">Admin: permits and refunds</span><i class="fa-solid fa-chevron-right text-slate-400" aria-hidden="true"></i></a>` : ''}
-        <a href="#/welcome" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-circle-info text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">How Chefy works</span><i class="fa-solid fa-chevron-right text-slate-400" aria-hidden="true"></i></a>
+        <a href="#/kitchen" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-kitchen-set text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">${S.me.chef ? 'My kitchen' : 'Cook on Chefy'}</span><i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>
+        ${u.isAdmin ? `<a href="#/admin" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-user-shield text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">Admin: permits and refunds</span><i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>` : ''}
+        <a href="#/welcome" class="flex items-center gap-3 p-4 text-sm font-bold text-slate-900"><i class="fa-solid fa-circle-info text-brand-600 w-5" aria-hidden="true"></i><span class="flex-1">How Chefy works</span><i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>
         <button data-act="logout" class="w-full flex items-center gap-3 p-4 text-sm font-bold text-rose-700"><i class="fa-solid fa-arrow-right-from-bracket w-5" aria-hidden="true"></i> Sign out</button>
       </div>
-      ${S.config.payments.mode === 'demo' ? `<p class="text-[11px] text-center text-slate-500">This Chefy server is in demo payments mode: no real cards are charged.</p>` : ''}
+      ${S.config.payments.mode === 'demo' ? `<p class="text-xs text-center text-slate-500">This Chefy server is in demo payments mode: no real cards are charged.</p>` : ''}
     </section>`;
 }
 
@@ -1298,16 +1297,16 @@ async function adminView() {
   view.innerHTML = `
     <section class="space-y-4">
       <div class="grid grid-cols-2 gap-3 lg:max-w-xl">
-        <div class="card p-3.5 lg:p-5"><p class="text-[11px] font-semibold text-slate-500">Paid orders</p><p class="text-xl font-black">${q.totals.orders}</p></div>
-        <div class="card p-3.5"><p class="text-[11px] font-semibold text-slate-500">Chefy revenue</p><p class="text-xl font-black">${money(q.totals.revenue)}</p></div>
+        <div class="card p-3.5 lg:p-5"><p class="text-xs font-semibold text-slate-500">Paid orders</p><p class="text-xl font-black">${q.totals.orders}</p></div>
+        <div class="card p-3.5"><p class="text-xs font-semibold text-slate-500">Chefy revenue</p><p class="text-xl font-black">${money(q.totals.revenue)}</p></div>
       </div>
       <div class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start"><div class="space-y-3">
       <h1 class="text-base font-bold text-slate-900">Permits to check (${q.permits.length})</h1>
       ${q.permits.length ? q.permits.map(p => `
         <div class="card p-4 space-y-2 text-xs">
-          <p class="text-sm font-bold text-slate-900">${esc(p.kitchenName)} <span class="font-normal text-slate-500">· ${esc(p.name)}</span></p>
+          <p class="text-sm font-bold text-slate-900">${esc(p.kitchenName)}</p><p class="text-slate-600">${esc(p.name)}</p>
           <p class="text-slate-600">${esc(p.email)}</p>
-          <p class="text-slate-700">${esc(p.state)} · #${esc(p.number)} · expires ${esc(p.expiry)}</p>
+          <p class="text-slate-700">${meta([esc(p.state), '#' + esc(p.number), 'expires ' + esc(p.expiry)])}</p>
           <a href="/api/files/${encodeURIComponent(p.file)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-bold text-brand-700 h-9"><i class="fa-solid fa-file-image" aria-hidden="true"></i> Open permit file</a>
           <div class="flex gap-2"><button data-act="permit" data-id="${p.chefId}" data-d="rejected" class="flex-1 h-11 rounded-xl border border-rose-200 text-rose-700 font-bold">Reject</button>
             <button data-act="permit" data-id="${p.chefId}" data-d="verified" class="flex-1 h-11 rounded-xl bg-emerald-600 text-white font-bold">Approve</button></div>
@@ -1316,9 +1315,9 @@ async function adminView() {
       <h2 class="text-base font-bold text-slate-900 pt-2 lg:pt-0">Problems reported (${q.issues.length})</h2>
       ${q.issues.length ? q.issues.map(o => `
         <div class="card p-4 space-y-2 text-xs">
-          <p class="text-sm font-bold text-slate-900">${esc(o.code)} · ${esc(o.chef.kitchenName)} <span class="font-normal text-slate-500">· ${money(o.total)}</span></p>
-          <p class="text-slate-600">Customer: ${esc(o.eater.name)} · ${o.items.map(i => `${i.qty}× ${esc(i.title)}`).join(', ')}</p>
-          <p class="p-2.5 rounded-lg bg-rose-50 text-rose-800">“${esc(o.issue.reason)}”</p>
+          <p class="text-sm font-bold text-slate-900">${meta([esc(o.code), esc(o.chef.kitchenName), `<span class="font-normal text-slate-500 tabular-nums">${money(o.total)}</span>`])}</p>
+          <p class="text-slate-600">Customer: ${esc(o.eater.name)}</p><p class="text-slate-600">${o.items.map(i => `${i.qty}× ${esc(i.title)}`).join(', ')}</p>
+          <p class="pl-3 border-l-2 border-rose-400 text-rose-800">“${esc(o.issue.reason)}”</p>
           <div class="flex gap-2"><button data-act="issue" data-code="${esc(o.code)}" data-d="dismiss" class="flex-1 h-11 rounded-xl border border-slate-200 font-bold">Dismiss</button>
             <button data-act="issue" data-code="${esc(o.code)}" data-d="refund" class="flex-1 h-11 rounded-xl bg-rose-600 text-white font-bold">Refund ${money(o.total)}</button></div>
         </div>`).join('') : `<p class="text-sm text-slate-500">No open problems.</p>`}
@@ -1366,7 +1365,7 @@ const ACT = {
     <form data-form="issue" data-code="${esc(el.dataset.code)}" class="p-5 space-y-3" novalidate>
       <label class="label" for="iReason">What went wrong?</label>
       <textarea id="iReason" name="reason" rows="4" maxlength="500" required class="field" placeholder="e.g. One of the three tamales was missing, and the order was cold."></textarea>
-      <p class="text-[11px] text-slate-500">If the food was wrong, missing or not safe to eat, you'll get a full refund to your card.</p>
+      <p class="text-xs text-slate-500">If the food was wrong, missing or not safe to eat, you'll get a full refund to your card.</p>
       ${errorBox()}<button class="btn-dark" type="submit">Send report</button>
     </form>`, 'Report a problem'),
   'cook-order': async el => {
