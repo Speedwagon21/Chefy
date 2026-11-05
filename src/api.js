@@ -93,7 +93,8 @@ function orderOut(o, viewer) {
   const chef = one('SELECT * FROM chefs WHERE user_id = ?', o.chef_id);
   const eater = one('SELECT name, phone FROM users WHERE id = ?', o.eater_id);
   const review = one('SELECT rating, text FROM reviews WHERE order_id = ?', o.id);
-  const paid = o.status !== 'awaiting_payment';
+  // Pickup address only for orders whose payment was actually authorized and that are still active.
+  const paid = !!o.authorized_at && !['canceled', 'declined'].includes(o.status);
   const out = {
     code: o.code, status: o.status, fulfillment: o.fulfillment, notes: o.notes, deliveryAddress: o.delivery_address,
     subtotal: o.subtotal_cents, fee: o.fee_cents, tip: o.tip_cents, total: o.total_cents,
@@ -146,8 +147,8 @@ router.post('/auth/signup', wrap(async (req, res) => {
   if (password.length > 200) throw new HttpError(400, 'That password is too long.');
   const neighborhood = str(req.body.neighborhood, { max: 80 });
   if (one('SELECT 1 FROM users WHERE email = ?', email)) throw new HttpError(409, 'An account with that email already exists. Sign in instead.');
-  const r = run('INSERT INTO users (email, name, password_hash, neighborhood, is_admin, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    email, name, auth.hashPassword(password), neighborhood || null, auth.isAdminEmail(email) ? 1 : 0, now());
+  const r = run('INSERT INTO users (email, name, password_hash, neighborhood, created_at) VALUES (?, ?, ?, ?, ?)',
+    email, name, auth.hashPassword(password), neighborhood || null, now());
   auth.createSession(res, Number(r.lastInsertRowid));
   req.user = one('SELECT * FROM users WHERE id = ?', r.lastInsertRowid);
   req.chef = null;
