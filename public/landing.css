@@ -6,6 +6,9 @@
 
 /* Hallmark · swapped the draw's Rail position to after the cooks section so photographs never lead two sections in a row (83) */
 
+/* Hallmark · hero-review: fix · 5 findings · 5 resolved (1 leftover fixed: the wrapped text action now sits on the 16px gutter)
+ * finish-review: subagent · 8 findings · 8 resolved · gap: none */
+
 /* Hallmark · dismissed 76, 44c and 79 on the render tier: the sandbox cannot reach images.unsplash.com, so the hero photo collapses; with the photo loaded the hero spans y 99 to 875 of 900 */
 
 /* Hallmark · answered 58: the busiest 1440 screen straddles two sections (cooks 52 words, the live menu 56); each section alone is under 60 words */
@@ -453,7 +456,18 @@ body {
 .btn-text {
   background: transparent;
   color: var(--color-accent);
-  padding-inline: var(--space-sm);
+  padding-inline: 0;
+  margin-inline: var(--space-xs);
+}
+
+.actions .btn-text {
+  margin-inline: var(--space-xs) 0;
+}
+
+@media (max-width: 40rem) {
+  .actions .btn-text {
+    margin-inline: 0;
+  }
 }
 
 .btn-text:hover {

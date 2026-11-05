@@ -3,6 +3,8 @@
  * axes: light/grotesk-sans/chromatic-blue · draw: 171cbf · photos: the cooks' own dish photos, served live from the menu · contrast: pass · fold: pass · v2.0.0 */
 /* Hallmark · pre-emit critique: P3 H3 E3 S3 R2 V3 · weakest: R (the page leans on one dish photo at a time), so the How section is built from the order ticket, not a photograph */
 /* Hallmark · swapped the draw's Rail position to after the cooks section so photographs never lead two sections in a row (83) */
+/* Hallmark · hero-review: fix · 5 findings · 5 resolved (1 leftover fixed: the wrapped text action now sits on the 16px gutter)
+ * finish-review: subagent · 8 findings · 8 resolved · gap: none */
 /* Hallmark · dismissed 76, 44c and 79 on the render tier: the sandbox cannot reach images.unsplash.com, so the hero photo collapses; with the photo loaded the hero spans y 99 to 875 of 900 */
 /* Hallmark · answered 58: the busiest 1440 screen straddles two sections (cooks 52 words, the live menu 56); each section alone is under 60 words */
 /* Hallmark · reworded "Cook for your neighbors" to "Get your permit checked, then cook." and "Made this morning, a few blocks away" to "From a checked home kitchen" · craft 6: both would pass on a competitor's page */
@@ -43,7 +45,9 @@ body { font-family: var(--font-body); color: var(--color-ink); background: var(-
 .btn:active { transform: scale(0.98); }
 .btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
 .btn-sm { min-height: 44px; padding: 0 var(--space-md); }
-.btn-text { background: transparent; color: var(--color-accent); padding-inline: var(--space-sm); }
+.btn-text { background: transparent; color: var(--color-accent); padding-inline: 0; margin-inline: var(--space-xs); }
+.actions .btn-text { margin-inline: var(--space-xs) 0; }
+@media (max-width: 40rem) { .actions .btn-text { margin-inline: 0; } }
 .btn-text:hover { color: var(--color-accent-strong); text-decoration: underline; }
 
 /* ---------- nav ---------- */
