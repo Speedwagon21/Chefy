@@ -65,9 +65,14 @@ test('full order lifecycle with held payment, review, refund and payout', async 
   assert.equal(r.body.chef.permit.status, 'pending');
   assert.equal((await stranger('GET', `/api/files/${permitFile.body.file}`)).status, 403);
   assert.equal((await cook('POST', '/api/chef/bank', { bank: 'Checking', routing: '123456789', account: '000123456789' })).body.chef.payouts.bankLabel, 'Checking •••• 6789');
-  const dish = await cook('POST', '/api/chef/dishes', { title: 'Pork tamales (3)', category: 'Tamales', price: 14.5, description: 'Hand-wrapped', prepTime: '20 min' });
+  const dish = await cook('POST', '/api/chef/dishes', { title: 'Pork tamales (3)', categories: ['Comfort Food', 'High Protein'], price: 14.5, description: 'Hand-wrapped', prepTime: '20 min' });
   assert.equal(dish.status, 201);
   assert.equal(dish.body.dish.price, 1450);
+  assert.deepEqual(dish.body.dish.categories, ['Comfort Food', 'High Protein']);
+  assert.equal((await cook('POST', '/api/chef/dishes', { title: 'x', categories: ['Tamales'], price: 5, description: 'x' })).status, 400, 'old categories are rejected');
+  assert.equal((await cook('POST', '/api/chef/dishes', { title: 'x', categories: [], price: 5, description: 'x' })).status, 400, 'at least one');
+  assert.equal((await cook('POST', '/api/chef/dishes', { title: 'x', categories: ['Healthy', 'Breakfast', 'Desserts', 'Other'], price: 5, description: 'x' })).status, 400, 'at most three');
+  assert.deepEqual((await cook('PATCH', `/api/chef/dishes/${dish.body.dish.id}`, { available: true })).body.dish.categories, ['Comfort Food', 'High Protein'], 'editing keeps categories');
 
   // not visible until the permit is approved
   assert.equal((await eater('GET', '/api/dishes')).body.dishes.length, 0);
@@ -162,6 +167,12 @@ test('full order lifecycle with held payment, review, refund and payout', async 
   const extra = await cook('POST', '/api/chef/dishes', { title: 'Extra', category: 'Other', price: 5, description: 'x' });
   assert.equal((await cook('DELETE', `/api/chef/dishes/${extra.body.dish.id}`, {})).status, 200);
   assert.equal((await cook('GET', '/api/chef/dishes')).body.dishes.some(x => x.id === extra.body.dish.id), false);
+
+  // dishes saved with the old single categories are moved onto the new ones
+  const { run: rawRun, one: rawOne, migrateCategories } = require('../src/db');
+  const legacy = rawRun(`INSERT INTO dishes (chef_id, title, category, price_cents, description, created_at) VALUES (?, 'Old taco', 'Tacos', 900, 'x', 0)`, sum.chef.id);
+  migrateCategories();
+  assert.deepEqual([rawOne('SELECT category, categories FROM dishes WHERE id = ?', legacy.lastInsertRowid)].map(r => [r.category, r.categories])[0], ['Street Food', 'Street Food']);
 
   // sign out ends the session
   await eater('POST', '/api/auth/logout', {});

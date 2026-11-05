@@ -277,7 +277,8 @@ async function welcomeView() {
 }
 
 // ============ eat ============
-const CAT_ICONS = { All: 'fa-border-all', Tamales: 'fa-leaf', Tacos: 'fa-pepper-hot', Bakery: 'fa-bread-slice', 'Hot Meals': 'fa-fire-burner', Desserts: 'fa-cake-candles', Other: 'fa-utensils' };
+const CAT_ICONS = { All: 'fa-border-all', 'Quick Meals': 'fa-bolt', Healthy: 'fa-heart', 'High Protein': 'fa-dumbbell', Desserts: 'fa-ice-cream', 'Comfort Food': 'fa-bell-concierge', Breakfast: 'fa-mug-hot', 'Street Food': 'fa-pepper-hot', 'Baked Goods': 'fa-bread-slice', Other: 'fa-utensils' };
+const dishCats = d => d.categories || [d.category];
 const SORTS = { popular: 'Most popular', rating: 'Top rated', price: 'Lowest price', quick: 'Quickest' };
 const DEFAULT_FILTERS = { sort: 'popular', dietary: '', availableOnly: false };
 S.filters = { ...DEFAULT_FILTERS, ...store.get('chefy_filters', {}) };
@@ -362,8 +363,8 @@ function renderTrending() {
 
 function filteredDishes(cat) {
   const q = (S.searchQ || '').trim().toLowerCase(), f = S.filters;
-  const list = S.dishes.filter(d => (cat === 'All' || d.category === cat) &&
-    (!q || [d.title, d.description, d.chef.kitchenName, d.category, d.dietary, d.chef.cuisine].join(' ').toLowerCase().includes(q)) &&
+  const list = S.dishes.filter(d => (cat === 'All' || dishCats(d).includes(cat)) &&
+    (!q || [d.title, d.description, d.chef.kitchenName, ...dishCats(d), d.dietary, d.chef.cuisine].join(' ').toLowerCase().includes(q)) &&
     (!f.dietary || d.dietary === f.dietary) && (!f.availableOnly || d.available));
   const rating = d => d.chef.rating.average || 0;
   const by = {
@@ -454,7 +455,7 @@ async function openDish(id) {
     </div>
     <div class="p-5 space-y-4">
       <div>
-        <p class="text-xs font-bold text-brand-700 uppercase tracking-wide">${esc(d.category)}${d.dietary ? ' · ' + esc(d.dietary) : ''}</p>
+        <p class="text-xs font-bold text-brand-700 uppercase tracking-wide">${dishCats(d).map(esc).join(' · ')}${d.dietary ? ' · ' + esc(d.dietary) : ''}</p>
         <h2 class="text-2xl font-black text-slate-900 leading-tight mt-1">${esc(d.title)}</h2>
         <p class="text-sm text-slate-500 mt-2 flex items-center gap-2 flex-wrap">
           ${d.prepTime ? `<span><i class="fa-regular fa-clock" aria-hidden="true"></i> Ready in ${esc(d.prepTime)}</span><span class="text-slate-300" aria-hidden="true">|</span>` : ''}
@@ -1022,7 +1023,7 @@ function menuTab(dishes) {
     ${dishes.length ? `<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">${dishes.map(d => `
       <div class="card p-3 flex gap-3 items-center">
         ${dishImg(d.imageUrl, 'w-16 h-16 rounded-xl shrink-0')}
-        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(d.title)}</p><p class="text-xs text-brand-700 font-bold">${money(d.price)} <span class="text-slate-400 font-medium">· ${esc(d.category)}</span></p>
+        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(d.title)}</p><p class="text-xs text-brand-700 font-bold">${money(d.price)} <span class="text-slate-400 font-medium">· ${dishCats(d).map(esc).join(', ')}</span></p>
           <label class="mt-1 inline-flex items-center gap-2 text-[11px] font-bold ${d.available ? 'text-emerald-700' : 'text-slate-500'}">
             <input type="checkbox" data-change="dish-available" data-id="${d.id}" ${d.available ? 'checked' : ''} class="w-5 h-5 accent-emerald-600"> ${d.available ? 'Available' : 'Sold out'}</label></div>
         <button data-act="dish-edit" data-id="${d.id}" class="w-11 h-11 rounded-xl border border-slate-200 text-slate-600" aria-label="Edit ${esc(d.title)}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
@@ -1093,10 +1094,13 @@ function dishForm(d = {}, { submitLabel = 'Save dish', formName = 'dish' } = {})
         </div>
       </div>
       <div><label class="label" for="dTitle">Dish name</label><input id="dTitle" name="title" required maxlength="80" value="${esc(d.title || '')}" class="field" placeholder="e.g. Pork red chile tamales (3 pack)"></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="label" for="dPrice">Price ($)</label><input id="dPrice" name="price" type="number" step="0.01" min="1" max="500" inputmode="decimal" required value="${d.price ? (d.price / 100).toFixed(2) : ''}" class="field" placeholder="14.50"></div>
-        <div><label class="label" for="dCat">Category</label><select id="dCat" name="category" class="field">${cats.map(c => `<option ${d.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
-      </div>
+      <fieldset>
+        <legend class="label">Categories <span class="font-normal text-slate-500">· pick up to 3</span></legend>
+        <div class="flex flex-wrap gap-2">${cats.map(c => `<label class="cursor-pointer">
+          <input type="checkbox" name="categories" value="${esc(c)}" data-change="cat-limit" class="peer sr-only" ${(d.id ? dishCats(d) : []).includes(c) ? 'checked' : ''}>
+          <span class="h-10 px-3.5 rounded-full text-sm font-bold flex items-center gap-1.5 bg-slate-100 text-slate-800 peer-checked:bg-brand-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500"><i class="fa-solid ${CAT_ICONS[c] || 'fa-utensils'}" aria-hidden="true"></i>${esc(c)}</span></label>`).join('')}</div>
+      </fieldset>
+      <div><label class="label" for="dPrice">Price ($)</label><input id="dPrice" name="price" type="number" step="0.01" min="1" max="500" inputmode="decimal" required value="${d.price ? (d.price / 100).toFixed(2) : ''}" class="field" placeholder="14.50"></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="label" for="dPrep">Ready in</label><input id="dPrep" name="prepTime" maxlength="30" value="${esc(d.prepTime || '')}" class="field" placeholder="25 min"></div>
         <div><label class="label" for="dDiet">Dietary</label><select id="dDiet" name="dietary" class="field"><option value="">None</option>${diets.map(c => `<option ${d.dietary === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
@@ -1114,7 +1118,9 @@ async function openDishSheet(id) {
 }
 async function saveDish(form, after) {
   const v = formValues(form);
+  v.categories = new FormData(form).getAll('categories');
   if (!v.title.trim() || !v.price || !v.description.trim()) return showError(form, 'Add a name, a price and a short description.');
+  if (!v.categories.length) return showError(form, 'Pick at least one category.');
   const btn = form.querySelector('button[type="submit"]');
   setBusy(btn, true, 'Saving…');
   try {
@@ -1483,6 +1489,9 @@ document.addEventListener('change', async e => {
     const label = $('#permitFileLabel'); label.textContent = 'Uploading…';
     try { const r = await upload(el.files[0], 'permit'); $('#permitFile').value = r.file; label.textContent = `Attached: ${el.files[0].name}`; }
     catch (err) { label.textContent = 'Take a photo or choose a file'; toast(err.message); }
+  } else if (k === 'cat-limit') {
+    const picked = el.form.querySelectorAll('input[name="categories"]:checked');
+    if (picked.length > 3) { el.checked = false; toast('Pick up to 3 categories'); }
   } else if (k === 'filter-avail') {
     setFilters({ availableOnly: el.checked });
   } else if (k === 'dish-available') {

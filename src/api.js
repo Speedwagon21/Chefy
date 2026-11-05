@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { one, all, run, tx, DATA_DIR } = require('./db');
+const { one, all, run, tx, DATA_DIR, CATEGORIES } = require('./db');
 const auth = require('./auth');
 const pay = require('./payments');
 const { HttpError, requireUser, requireChef, requireAdmin } = auth;
@@ -13,7 +13,6 @@ const router = express.Router();
 const COMMISSION_RATE = 0.10;
 const FEES = { pickup: 149, delivery: 399 };
 const TIP_OPTIONS = [0, 10, 15, 20, 25];
-const CATEGORIES = ['Tamales', 'Tacos', 'Bakery', 'Hot Meals', 'Desserts', 'Other'];
 const DIETARY = ['', 'Authentic Recipe', 'Vegetarian', 'Vegan', 'Gluten-Free', 'Halal', 'Organic'];
 const PERMIT_STATES = ['CA', 'TX', 'NY', 'FL', 'Other'];
 const ISSUE_WINDOW_MS = 48 * 3600000;
@@ -75,7 +74,7 @@ function ownChef(c) {
 }
 function dishOut(d) {
   return {
-    id: d.id, chefId: d.chef_id, title: d.title, category: d.category, price: d.price_cents, prepTime: d.prep_time,
+    id: d.id, chefId: d.chef_id, title: d.title, category: d.category, categories: splitCats(d), price: d.price_cents, prepTime: d.prep_time,
     dietary: d.dietary, description: d.description, imageUrl: d.image_url, available: !!d.available
   };
 }
@@ -306,10 +305,22 @@ router.post('/chef/permit', requireUser, requireChef, (req, res) => {
   res.json(meOut(req));
 });
 
+const splitCats = d => (d.categories || d.category || 'Other').split('|').filter(Boolean);
+// Accepts categories: [...] (1-3), or the older single category field.
+function categoryList(b, existing) {
+  let list = Array.isArray(b.categories) ? b.categories : (b.category !== undefined ? [b.category] : (existing.id ? splitCats(existing) : []));
+  list = [...new Set(list.map(String))];
+  if (!list.length) throw new HttpError(400, 'Pick at least one category.');
+  if (list.length > 3) throw new HttpError(400, 'Pick up to 3 categories.');
+  list.forEach(c => oneOf(c, CATEGORIES, 'Category'));
+  return list;
+}
 function dishFields(b, existing = {}) {
+  const cats = categoryList(b, existing);
   return {
     title: str(b.title ?? existing.title, { field: 'Dish name', required: true, max: 80 }),
-    category: oneOf(b.category ?? existing.category, CATEGORIES, 'Category'),
+    category: cats[0],
+    categories: cats.join('|'),
     price_cents: b.price !== undefined ? cents(b.price) : existing.price_cents,
     prep_time: str(b.prepTime ?? existing.prep_time, { max: 30 }),
     dietary: oneOf(b.dietary ?? existing.dietary ?? '', DIETARY, 'Dietary tag'),

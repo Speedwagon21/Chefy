@@ -21,8 +21,9 @@ const cooks = [
     address: '24th St & Folsom St, San Francisco', notes: 'Pickup 4–7pm. Ring #2 and I will come down.', delivery: 0,
     permit: ['CA', 'CFO-39182', '2027-12-31'],
     dishes: [
-      ['Pork red chile tamales (3 pack)', 'Tamales', 1450, '20–25 min', 'Authentic Recipe', 'Tender shredded pork in guajillo chile sauce, wrapped in soft masa and steamed in corn husks.', img('photo-1628102491629-778571d893a3')],
-      ['Sweet corn & green chile tamales (3 pack)', 'Tamales', 1350, '20 min', 'Vegetarian', 'Fresh sweet corn with roasted poblano and melted Oaxaca cheese.', img('photo-1541832676-9b763b0239ab')]
+      ['Pork red chile tamales (3 pack)', 'Comfort Food|High Protein', 1450, '20–25 min', 'Authentic Recipe', 'Tender shredded pork in guajillo chile sauce, wrapped in soft masa and steamed in corn husks.', img('photo-1628102491629-778571d893a3')],
+      ['Sweet corn & green chile tamales (3 pack)', 'Comfort Food|Healthy', 1350, '20 min', 'Vegetarian', 'Fresh sweet corn with roasted poblano and melted Oaxaca cheese.', img('photo-1541832676-9b763b0239ab')],
+      ['Chilaquiles verdes with fried egg', 'Breakfast|Quick Meals', 1150, '10 min', 'Vegetarian', 'Crispy tortilla chips simmered in tomatillo salsa, topped with a fried egg, crema and queso fresco.', img('photo-1525351484163-7529414344d8')]
     ]
   },
   {
@@ -32,7 +33,8 @@ const cooks = [
     address: 'Valencia St & 20th St, San Francisco', notes: 'Pickup 5–8pm at the side gate.', delivery: 1,
     permit: ['CA', 'FHC-88129', '2027-06-30'],
     dishes: [
-      ['Birria quesatacos trio with consommé', 'Tacos', 1600, '15–20 min', '', 'Three crispy cheese tacos stuffed with birria, served with rich consommé for dipping.', img('photo-1565299585323-38d6b0865b47')]
+      ['Birria quesatacos trio with consommé', 'Street Food|High Protein', 1600, '15–20 min', '', 'Three crispy cheese tacos stuffed with birria, served with rich consommé for dipping.', img('photo-1565299585323-38d6b0865b47')],
+      ['Chicken tinga power bowl', 'High Protein|Healthy|Quick Meals', 1450, '10 min', 'Gluten-Free', 'Smoky chipotle chicken over brown rice and black beans with avocado, pico de gallo and lime.', img('photo-1546069901-ba9599a7e63c')]
     ]
   },
   {
@@ -42,7 +44,8 @@ const cooks = [
     address: 'Dolores St & 18th St, San Francisco', notes: 'Pickup from the porch box; I will text you the code.', delivery: 0,
     permit: ['CA', 'CFO-77310', '2028-03-31'],
     dishes: [
-      ['Brown butter chocolate chip cookies (6 pack)', 'Bakery', 1200, '15 min', 'Organic', 'Crispy edges, gooey centers and a pinch of sea salt. Baked fresh for your order.', img('photo-1499636136210-6f4ee915583e')]
+      ['Brown butter chocolate chip cookies (6 pack)', 'Desserts|Baked Goods', 1200, '15 min', 'Organic', 'Crispy edges, gooey centers and a pinch of sea salt. Baked fresh for your order.', img('photo-1499636136210-6f4ee915583e')],
+      ['Banana walnut bread (whole loaf)', 'Baked Goods|Breakfast', 1400, '1 day ahead', 'Organic', 'Moist, not too sweet, with toasted walnuts. Order by 6pm for pickup tomorrow.', img('photo-1606101273945-e9eba91c0dc4')]
     ]
   }
 ];
@@ -58,8 +61,9 @@ tx(() => {
       id, c.kitchen, c.bio, c.cuisine, c.address, c.notes, c.avatar, c.cover, c.delivery, ...c.permit,
       pay.MODE === 'demo' ? 'Demo checking •••• 6789' : null, now);
     for (const d of c.dishes) {
-      run(`INSERT INTO dishes (chef_id, title, category, price_cents, prep_time, dietary, description, image_url, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, ...d, now);
+      const [title, cats, ...rest] = d;
+      run(`INSERT INTO dishes (chef_id, title, category, categories, price_cents, prep_time, dietary, description, image_url, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, title, cats.split('|')[0], cats, ...rest, now);
     }
   }
   run('INSERT INTO users (email, name, password_hash, neighborhood, created_at) VALUES (?, ?, ?, ?, ?)',

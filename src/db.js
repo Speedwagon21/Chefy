@@ -141,6 +141,23 @@ CREATE TABLE IF NOT EXISTS payouts (
 );
 `);
 
+// Categories: a dish has 1-3 of these. Old single categories are mapped onto them once.
+const CATEGORIES = ['Quick Meals', 'Healthy', 'High Protein', 'Desserts', 'Comfort Food', 'Breakfast', 'Street Food', 'Baked Goods', 'Other'];
+const OLD_CATEGORY_MAP = { Tamales: 'Comfort Food', Tacos: 'Street Food', Bakery: 'Baked Goods', 'Hot Meals': 'Comfort Food', Desserts: 'Desserts', Other: 'Other' };
+
+function migrateCategories() {
+  const cols = db.prepare('PRAGMA table_info(dishes)').all().map(c => c.name);
+  if (!cols.includes('categories')) db.exec('ALTER TABLE dishes ADD COLUMN categories TEXT');
+  const rows = db.prepare('SELECT id, category FROM dishes WHERE categories IS NULL').all();
+  const upd = db.prepare('UPDATE dishes SET category = ?, categories = ? WHERE id = ?');
+  for (const r of rows) {
+    const c = CATEGORIES.includes(r.category) ? r.category : (OLD_CATEGORY_MAP[r.category] || 'Other');
+    upd.run(c, c, r.id);
+  }
+  return rows.length;
+}
+migrateCategories();
+
 // Small helpers so route code stays readable
 const one = (sql, ...p) => db.prepare(sql).get(...p);
 const all = (sql, ...p) => db.prepare(sql).all(...p);
@@ -152,4 +169,4 @@ function tx(fn) {
   catch (e) { db.exec('ROLLBACK'); throw e; }
 }
 
-module.exports = { db, one, all, run, tx, DATA_DIR };
+module.exports = { db, one, all, run, tx, DATA_DIR, CATEGORIES, migrateCategories };
