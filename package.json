@@ -9,6 +9,7 @@
     "start": "node --disable-warning=ExperimentalWarning server.js",
     "dev": "node --disable-warning=ExperimentalWarning --watch server.js",
     "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "make-admin": "node --disable-warning=ExperimentalWarning scripts/make-admin.js",
     "build:css": "tailwindcss -c tailwind.config.js -i src/app.css -o public/app.css --minify",
     "build": "npm run build:css",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"

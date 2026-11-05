@@ -5,7 +5,6 @@ const { one, run } = require('./db');
 const SESSION_DAYS = 30;
 const COOKIE = 'chefy_sid';
 const SECURE_COOKIES = process.env.NODE_ENV === 'production' || /^https:/.test(process.env.PUBLIC_URL || '');
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16);
@@ -55,10 +54,6 @@ function loadUser(req, _res, next) {
     const row = one(`SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id
                      WHERE s.token_hash = ? AND s.expires_at > ?`, sha256(token), Date.now());
     if (row) {
-      if (ADMIN_EMAILS.includes(row.email.toLowerCase()) && !row.is_admin) {
-        run('UPDATE users SET is_admin = 1 WHERE id = ?', row.id);
-        row.is_admin = 1;
-      }
       req.user = row;
       req.chef = one('SELECT * FROM chefs WHERE user_id = ?', row.id) || null;
     }
@@ -85,9 +80,8 @@ function rateLimit(key, max = 10, windowMs = 15 * 60000) {
   if (rec.n > max) throw new HttpError(429, 'Too many attempts. Wait a few minutes and try again.');
 }
 
-function isAdminEmail(email) { return ADMIN_EMAILS.includes(String(email).toLowerCase()); }
 
 module.exports = {
   hashPassword, verifyPassword, createSession, destroySession, parseCookies, loadUser,
-  requireUser, requireChef, requireAdmin, rateLimit, HttpError, isAdminEmail
+  requireUser, requireChef, requireAdmin, rateLimit, HttpError
 };

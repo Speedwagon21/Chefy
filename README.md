@@ -17,7 +17,7 @@ Homemade food from verified home cooks in your neighborhood. A phone-first web a
 - Menu editor with photos and sold-out toggle, pause/open kitchen
 - Payouts: balance, held money, standard or instant cash-out, activity log
 
-**Chefy staff** (emails in `ADMIN_EMAILS`)
+**Chefy staff** (accounts promoted with `npm run make-admin`)
 - Approve or reject permits (permit files are private), review problem reports and refund
 
 **Money rules** (in `src/api.js`): Chefy keeps 10% of the food subtotal plus a $1.49 pickup / $3.99 delivery fee. Tips go 100% to the cook. Prices are always computed on the server.
@@ -53,6 +53,14 @@ How it maps to Stripe: each order is a PaymentIntent with `capture_method: manua
 Any host that runs Node or Docker works (Render, Railway, Fly.io, a VPS). Two requirements:
 - a **persistent disk** mounted at `DATA_DIR` (the SQLite database and uploaded photos live there)
 - HTTPS, with `PUBLIC_URL` set to the public address
+
+After the first deploy, sign up in the app with your own email, then make that account an admin from the server's shell (same `DATA_DIR` as the app):
+
+```bash
+npm run make-admin -- you@example.com
+```
+
+Admin access is only ever granted this way, never by signing up with a particular email.
 
 Docker: `docker build -t chefy . && docker run -p 3000:3000 -v chefy-data:/data --env-file .env chefy`
 

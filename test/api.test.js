@@ -7,9 +7,9 @@ const path = require('node:path');
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chefy-test-'));
 process.env.DATA_DIR = dir;
-process.env.ADMIN_EMAILS = 'boss@test.dev';
 delete process.env.STRIPE_SECRET_KEY;
 const app = require('../server');
+const { run: dbRun } = require('../src/db');
 
 let server, base;
 before(() => new Promise(r => { server = app.listen(0, () => { base = `http://127.0.0.1:${server.address().port}`; r(); }); }));
@@ -32,13 +32,18 @@ const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA
 
 test('full order lifecycle with held payment, review, refund and payout', async () => {
   const cook = client(), eater = client(), admin = client(), stranger = client();
+  let r0;
 
   // accounts
   assert.equal((await cook('POST', '/api/auth/signup', { name: 'Maria G', email: 'maria@test.dev', password: 'short' })).status, 400);
   assert.equal((await cook('POST', '/api/auth/signup', { name: 'Maria G', email: 'maria@test.dev', password: 'tamales-2026' })).status, 201);
   assert.equal((await stranger('POST', '/api/auth/signup', { name: 'Dup', email: 'MARIA@test.dev', password: 'whatever-123' })).status, 409);
   assert.equal((await eater('POST', '/api/auth/signup', { name: 'Alex R', email: 'alex@test.dev', password: 'birria-2026' })).status, 201);
-  assert.equal((await admin('POST', '/api/auth/signup', { name: 'Boss', email: 'boss@test.dev', password: 'admin-pass-1' })).status, 201);
+  r0 = await admin('POST', '/api/auth/signup', { name: 'Boss', email: 'boss@test.dev', password: 'admin-pass-1' });
+  assert.equal(r0.status, 201);
+  assert.equal(r0.body.user.isAdmin, false, 'signing up never grants admin');
+  assert.equal((await admin('GET', '/api/admin/queue')).status, 403);
+  dbRun('UPDATE users SET is_admin = 1 WHERE email = ?', 'boss@test.dev'); // what `npm run make-admin` does
   assert.equal((await stranger('POST', '/api/auth/signup', { name: 'Sam', email: 'sam@test.dev', password: 'sam-pass-123' })).status, 201);
   assert.equal((await eater('POST', '/api/auth/login', { email: 'alex@test.dev', password: 'wrong-pass' })).status, 401);
   assert.equal((await eater('POST', '/api/auth/login', { email: 'alex@test.dev', password: 'birria-2026' })).status, 200);
@@ -78,6 +83,12 @@ test('full order lifecycle with held payment, review, refund and payout', async 
   let o = r.body.order;
   assert.equal(o.subtotal, 2900); assert.equal(o.fee, 149); assert.equal(o.tip, 435); assert.equal(o.total, 3484);
   assert.equal(o.chef.pickupAddress, null, 'address hidden until paid');
+
+  // an unpaid order that is cancelled must not reveal the cook's address
+  const probe = await eater('POST', '/api/orders', { items: [{ dishId: dish.body.dish.id, qty: 1 }], fulfillment: 'pickup', tipPercent: 0 });
+  assert.equal((await eater('POST', `/api/orders/${probe.body.order.code}/cancel`, {})).body.order.status, 'canceled');
+  assert.equal((await eater('GET', `/api/orders/${probe.body.order.code}`)).body.order.chef.pickupAddress, null, 'cancelled unpaid order hides address');
+  assert.equal((await eater('GET', '/api/orders')).body.orders.find(x => x.code === probe.body.order.code).chef.pickupAddress, null);
   assert.equal((await cook('POST', '/api/orders', { items: [{ dishId: dish.body.dish.id, qty: 1 }], fulfillment: 'pickup', tipPercent: 0 })).status, 400, 'no self-orders');
   assert.equal((await eater('POST', '/api/orders', { items: [{ dishId: dish.body.dish.id, qty: 1 }], fulfillment: 'delivery', tipPercent: 0, deliveryAddress: '1 Main St' })).status, 400, 'pickup-only cook');
 
@@ -123,8 +134,10 @@ test('full order lifecycle with held payment, review, refund and payout', async 
   // second order: cook declines -> hold released
   r = await eater('POST', '/api/orders', { items: [{ dishId: dish.body.dish.id, qty: 1 }], fulfillment: 'pickup', tipPercent: 0 });
   await eater('POST', `/api/orders/${r.body.order.code}/confirm`, { demoCard: { brand: 'Visa', last4: '4242' } });
-  r = await cook('POST', `/api/chef/orders/${r.body.order.code}/decline`, {});
+  const declinedCode = r.body.order.code;
+  r = await cook('POST', `/api/chef/orders/${declinedCode}/decline`, {});
   assert.equal(r.body.order.status, 'declined'); assert.equal(r.body.order.payment.status, 'canceled');
+  assert.equal((await eater('GET', `/api/orders/${declinedCode}`)).body.order.chef.pickupAddress, null, 'declined order hides address');
 
   // sold out dishes can't be ordered
   await cook('PATCH', `/api/chef/dishes/${dish.body.dish.id}`, { available: false });
