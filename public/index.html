@@ -21,7 +21,7 @@
 <body class="min-h-dvh text-slate-800 antialiased bg-white">
 
   <header class="sticky top-0 z-40 glass safe-top">
-    <div class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 h-[4.5rem] lg:h-20 flex items-center justify-between gap-2">
+    <div class="max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 md:px-6 lg:px-8 h-[4.5rem] lg:h-20 flex items-center justify-between gap-2">
       <a href="#/" class="flex items-center gap-2.5" aria-label="Chefy home">
         <img src="/logo.svg" alt="" class="h-10 w-auto" width="46" height="40">
         <span class="text-[1.85rem] font-black tracking-tight text-slate-900 leading-none">Chefy</span>
@@ -38,9 +38,9 @@
     </div>
   </header>
 
-  <main id="view" class="max-w-md lg:max-w-6xl mx-auto px-4 lg:px-8 pt-4 lg:pt-8 pb-nav" tabindex="-1"></main>
+  <main id="view" class="max-w-md md:max-w-3xl lg:max-w-6xl mx-auto px-4 md:px-6 lg:px-8 pt-4 md:pt-6 lg:pt-8 pb-nav" tabindex="-1"></main>
 
-  <div id="basketBar" class="hidden lg:!hidden fixed z-30 left-1/2 -translate-x-1/2 w-full max-w-md px-3" style="bottom: calc(6.25rem + env(safe-area-inset-bottom));">
+  <div id="basketBar" class="hidden lg:!hidden fixed z-30 left-1/2 -translate-x-1/2 w-full max-w-md md:max-w-xl px-3">
     <button data-act="open-basket" class="w-full flex items-center justify-between gap-3 px-5 py-3.5 bg-slate-900 active:bg-slate-800 text-white rounded-full shadow-xl shadow-slate-900/25">
       <span class="flex items-center gap-2.5">
         <span id="basketBarCount" class="min-w-[1.5rem] h-6 px-1.5 bg-white/25 rounded-lg text-xs font-black flex items-center justify-center">0</span>
@@ -50,7 +50,7 @@
     </button>
   </div>
 
-  <nav class="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md bg-white border-t border-slate-200 rounded-t-3xl shadow-[0_-4px_20px_rgba(15,23,42,0.06)] safe-bottom" aria-label="Main tabs">
+  <nav id="tabBar" class="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md md:max-w-xl bg-white border-t border-slate-200 rounded-t-3xl md:rounded-full md:border md:shadow-xl shadow-[0_-4px_20px_rgba(15,23,42,0.06)] safe-bottom" aria-label="Main tabs">
     <div class="grid grid-cols-5 h-[4.75rem] items-center">
       <a href="#/" data-nav="eat" class="nav-btn h-full flex flex-col items-center justify-center gap-1">
         <i class="fa-solid fa-house text-[22px]" aria-hidden="true"></i><span class="text-xs font-bold">Home</span>

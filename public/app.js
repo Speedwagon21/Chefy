@@ -230,7 +230,7 @@ async function afterSignedIn(me, isNew) {
 async function welcomeView() {
   view.innerHTML = `
   <section class="space-y-6">
-    <div class="relative -mx-4 -mt-4 px-5 pt-8 pb-10 lg:mx-0 lg:mt-0 lg:rounded-3xl lg:px-14 lg:py-20 bg-slate-950 text-white overflow-hidden">
+    <div class="relative -mx-4 -mt-4 px-5 pt-8 pb-10 md:mx-0 md:mt-0 md:rounded-3xl md:px-10 md:py-14 lg:px-14 lg:py-20 bg-slate-950 text-white overflow-hidden">
       <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=1400&auto=format&fit=crop&q=75" alt="" class="absolute inset-y-0 right-0 w-full lg:w-3/5 h-full object-cover opacity-35 lg:opacity-100">
       <div class="absolute inset-0 bg-gradient-to-r from-slate-950 from-30% via-slate-950/85 to-slate-950/30" aria-hidden="true"></div>
       <div class="relative space-y-4 lg:space-y-6 lg:max-w-2xl">
@@ -286,7 +286,7 @@ const filtersActive = () => S.filters.sort !== 'popular' || !!S.filters.dietary 
 const prepMinutes = d => { const m = /\d+/.exec(d.prepTime || ''); return m ? Number(m[0]) : 999; };
 const seeAll = id => `<button ${id ? `id="${id}"` : ''} data-act="${id === 'seeAllBtn' ? 'see-all' : 'filters'}" class="text-sm font-bold text-brand-600 hover:text-brand-700 h-11 flex items-center gap-1.5">See all <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>`;
 const skeletonCards = n => Array.from({ length: n }, () => `<div class="card overflow-hidden"><div class="skeleton aspect-[4/3] rounded-none"></div><div class="p-3 space-y-2"><div class="skeleton h-4 w-5/6"></div><div class="skeleton h-3 w-2/3"></div><div class="skeleton h-6 w-12"></div></div></div>`).join('');
-const cardGrid = 'grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4 lg:gap-5';
+const cardGrid = 'grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4 lg:gap-5';
 
 async function loadDishes(force) {
   if (!S.dishes || force) S.dishes = (await api('/api/dishes')).dishes;
@@ -311,9 +311,9 @@ async function eatView(query) {
       <div id="trending"></div>
       <div>
         <div class="flex items-center justify-between mb-3"><h2 class="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">Browse categories</h2>${seeAll()}</div>
-        <div class="-mx-4 px-4 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto hide-scrollbar" role="tablist" aria-label="Categories">
+        <div class="-mx-4 px-4 md:-mx-6 md:px-6 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto hide-scrollbar lg:grid lg:grid-cols-10 lg:overflow-visible" role="tablist" aria-label="Categories">
           ${['All', ...(S.config.categories || [])].map(c => `<a role="tab" aria-selected="${c === cat}" href="#/${c === 'All' ? '' : '?cat=' + encodeURIComponent(c)}"
-            class="shrink-0 w-[5.5rem] h-24 rounded-2xl flex flex-col items-center justify-center gap-2 text-center transition-colors ${c === cat ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'}">
+            class="shrink-0 w-[5.5rem] md:w-24 lg:w-auto h-24 md:h-[6.5rem] rounded-2xl flex flex-col items-center justify-center gap-2 text-center transition-colors ${c === cat ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'}">
             <i class="fa-solid ${CAT_ICONS[c] || 'fa-utensils'} text-2xl" aria-hidden="true"></i><span class="text-xs font-bold leading-tight px-1">${esc(c)}</span></a>`).join('')}
         </div>
       </div>
@@ -335,9 +335,9 @@ function renderTrending() {
   if (!top.length) { box.innerHTML = ''; return; }
   box.innerHTML = `
     <div class="relative" aria-roledescription="carousel" aria-label="Trending dishes">
-      <div id="trendTrack" class="-mx-4 px-4 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto snap-x snap-mandatory hide-scrollbar scroll-px-4 lg:scroll-px-0">
+      <div id="trendTrack" class="-mx-4 px-4 md:mx-0 md:px-0 flex gap-3 overflow-x-auto snap-x snap-mandatory hide-scrollbar scroll-px-4 md:scroll-px-0">
         ${top.map((d, i) => `
-        <article class="snap-center shrink-0 w-full relative h-60 lg:h-80 rounded-[1.75rem] overflow-hidden bg-slate-950 text-white" aria-roledescription="slide" aria-label="${i + 1} of ${top.length}">
+        <article class="snap-center shrink-0 w-full relative h-60 md:h-72 lg:h-80 rounded-[1.75rem] overflow-hidden bg-slate-950 text-white" aria-roledescription="slide" aria-label="${i + 1} of ${top.length}">
           ${d.imageUrl ? `<img src="${esc(d.imageUrl)}" alt="" class="absolute inset-y-0 right-0 w-[62%] h-full object-cover">`
             : `<div class="absolute inset-y-0 right-0 w-[62%] bg-gradient-to-br from-brand-700 to-slate-900 flex items-center justify-center text-7xl text-white/20" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></div>`}
           <div class="absolute inset-0 bg-gradient-to-r from-slate-950 from-35% via-slate-950/80 to-transparent" aria-hidden="true"></div>
@@ -351,7 +351,13 @@ function renderTrending() {
           </div>
         </article>`).join('')}
       </div>
-      ${top.length > 1 ? `<div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2" aria-hidden="true">${top.map((_, i) => `<span data-dot="${i}" class="w-2.5 h-2.5 rounded-full transition-colors ${i ? 'bg-white/35' : 'bg-brand-500'}"></span>`).join('')}</div>` : ''}
+      ${top.length > 1 ? `
+      <div class="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex" role="group" aria-label="Choose slide">${top.map((_, i) => `
+        <button data-act="trend-go" data-i="${i}" class="w-10 h-10 flex items-center justify-center" aria-label="Show slide ${i + 1}"><span data-dot="${i}" class="w-2.5 h-2.5 rounded-full transition-colors ${i ? 'bg-white/35' : 'bg-brand-500'}"></span></button>`).join('')}</div>
+      <div class="hidden md:flex absolute bottom-4 right-4 gap-2">
+        <button data-act="trend-step" data-d="-1" class="w-12 h-12 rounded-full bg-white/90 hover:bg-white text-slate-900 shadow-lg flex items-center justify-center" aria-label="Previous slide"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+        <button data-act="trend-step" data-d="1" class="w-12 h-12 rounded-full bg-white/90 hover:bg-white text-slate-900 shadow-lg flex items-center justify-center" aria-label="Next slide"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+      </div>` : ''}
     </div>`;
   const track = $('#trendTrack');
   track.addEventListener('scroll', () => {
@@ -361,6 +367,16 @@ function renderTrending() {
   }, { passive: true });
 }
 
+function trendIndex() {
+  const t = $('#trendTrack');
+  return t ? Math.round(t.scrollLeft / (t.firstElementChild.offsetWidth + 12)) : 0;
+}
+function trendScroll(i) {
+  const t = $('#trendTrack'); if (!t) return;
+  const n = t.children.length;
+  const next = (i + n) % n;
+  t.scrollTo({ left: next * (t.firstElementChild.offsetWidth + 12), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
 function filteredDishes(cat) {
   const q = (S.searchQ || '').trim().toLowerCase(), f = S.filters;
   const list = S.dishes.filter(d => (cat === 'All' || dishCats(d).includes(cat)) &&
@@ -414,7 +430,7 @@ function dishCard(d) {
       <h3 class="font-bold text-slate-900 text-[15px] lg:text-base leading-snug line-clamp-2"><button data-act="dish" data-id="${d.id}" class="text-left hover:text-brand-700">${esc(d.title)}</button></h3>
       <p class="text-xs text-slate-500 flex items-center gap-1.5 min-w-0">
         ${d.prepTime ? `<span class="shrink-0"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${esc(d.prepTime)}</span><span class="text-slate-300" aria-hidden="true">|</span>` : ''}
-        <a href="#/chef/${d.chefId}" class="truncate hover:text-brand-700">${esc(d.chef.kitchenName)}</a></p>
+        <a href="#/chef/${d.chefId}" class="truncate hover:text-brand-700 py-3 -my-3">${esc(d.chef.kitchenName)}</a></p>
       <div><span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-xs font-bold text-slate-800">${r.count ? `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${r.average.toFixed(1)}<span class="sr-only"> stars</span>` : 'New cook'}</span></div>
       <div class="mt-auto pt-1.5 flex items-center justify-between gap-2">
         <span class="text-base lg:text-lg font-black text-slate-900">${money(d.price)}</span>
@@ -575,16 +591,16 @@ function refreshShopLists() {
 
 // ============ cook page ============
 async function chefView(id) {
-  view.innerHTML = `<div class="skeleton h-40 lg:h-64 -mx-4 -mt-4 lg:mx-0 lg:mt-0 rounded-none lg:rounded-3xl"></div><div class="space-y-3 mt-4">${skeletonList(2)}</div>`;
+  view.innerHTML = `<div class="skeleton h-40 md:h-56 lg:h-64 -mx-4 -mt-4 md:mx-0 md:mt-0 rounded-none md:rounded-3xl"></div><div class="space-y-3 mt-4">${skeletonList(2)}</div>`;
   S.chefPage = await api(`/api/chefs/${encodeURIComponent(id)}`);
   const { chef, reviews } = S.chefPage;
   S.chefPage.dishes.forEach(d => { d.chef = chef; });
   view.innerHTML = `
-    <div class="relative -mx-4 -mt-4 h-40 lg:mx-0 lg:mt-0 lg:h-64 lg:rounded-3xl overflow-hidden bg-gradient-to-br from-brand-100 to-brand-300">
+    <div class="relative -mx-4 -mt-4 h-40 md:mx-0 md:mt-0 md:h-56 lg:h-64 md:rounded-3xl overflow-hidden bg-gradient-to-br from-brand-100 to-brand-300">
       ${chef.coverUrl ? `<img src="${esc(chef.coverUrl)}" alt="" class="w-full h-full object-cover">` : ''}
       <a href="#/" class="absolute top-3 left-3 w-11 h-11 rounded-full bg-white/90 flex items-center justify-center text-slate-800 shadow" aria-label="Back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></a>
     </div>
-    <section class="relative -mt-8 lg:-mt-16 lg:px-6 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[22rem_1fr] lg:gap-8 lg:items-start">
+    <section class="relative -mt-8 md:-mt-12 md:px-6 lg:-mt-16 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[22rem_1fr] lg:gap-8 lg:items-start">
       <div class="card p-4 lg:p-5 lg:sticky lg:top-24">
         <div class="flex items-center gap-3">
           ${avatar(chef.avatarUrl, chef.kitchenName, 'w-16 h-16 rounded-2xl ring-4 ring-white')}
@@ -604,7 +620,7 @@ async function chefView(id) {
       </div>
       <div class="space-y-4 lg:pt-20">
       <h2 class="text-base lg:text-xl font-bold text-slate-900">Menu</h2>
-      <div id="chefMenu" class="grid grid-cols-2 gap-3 lg:gap-5"></div>
+      <div id="chefMenu" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 lg:gap-5"></div>
       <h2 class="text-base font-bold text-slate-900 pt-2">Reviews</h2>
       ${reviews.length ? reviews.map(r => `
         <div class="card p-3.5">
@@ -833,8 +849,8 @@ async function ordersView() {
       <div class="flex gap-1.5 flex-wrap">${statusChip(o)} ${payChip(o.payment)}${o.issue ? ` <span class="chip bg-rose-50 text-rose-700">Problem ${esc(o.issue.status)}</span>` : ''}</div>
     </a>`;
   view.innerHTML = `
-    ${active.length ? `<h1 class="text-base lg:text-xl font-bold text-slate-900 mb-2 lg:mb-3">In progress</h1><div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 mb-6 lg:mb-10">${active.map(card).join('')}</div>` : ''}
-    ${past.length ? `<h2 class="text-base lg:text-xl font-bold text-slate-900 mb-2 lg:mb-3">Past orders</h2><div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">${past.map(card).join('')}</div>` : ''}`;
+    ${active.length ? `<h1 class="text-base lg:text-xl font-bold text-slate-900 mb-2 lg:mb-3">In progress</h1><div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 lg:gap-4 mb-6 lg:mb-10">${active.map(card).join('')}</div>` : ''}
+    ${past.length ? `<h2 class="text-base lg:text-xl font-bold text-slate-900 mb-2 lg:mb-3">Past orders</h2><div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 lg:gap-4">${past.map(card).join('')}</div>` : ''}`;
 }
 
 async function orderView(code, query) {
@@ -971,15 +987,15 @@ async function kitchenView(query) {
         </div>`}
       </div>
 
-      <div class="-mx-4 px-4 lg:mx-0 lg:px-0 flex gap-3 overflow-x-auto hide-scrollbar snap-x lg:grid lg:grid-cols-4 lg:gap-4 lg:overflow-visible">
+      <div class="-mx-4 px-4 md:mx-0 md:px-0 flex gap-3 overflow-x-auto hide-scrollbar snap-x md:grid md:grid-cols-4 md:gap-4 md:overflow-visible">
         ${[["Today's earnings", money(sum.stats.todayEarned), `${sum.stats.todayOrders} order${sum.stats.todayOrders === 1 ? '' : 's'} charged`],
            ['Active orders', sum.stats.activeOrders, newCount ? `${newCount} new` : 'All handled'],
            ['Dishes', sum.stats.dishes, `${sum.stats.liveDishes} available`],
            ['Balance', sum.balance ? money(sum.balance.available) : '—', 'Ready to cash out']]
-          .map(([l, v, s]) => `<div class="snap-start shrink-0 w-36 lg:w-auto card p-3.5 lg:p-5"><p class="text-[11px] font-semibold text-slate-500">${l}</p><p class="text-xl font-black text-slate-900 mt-0.5">${v}</p><p class="text-[10px] text-slate-500">${s}</p></div>`).join('')}
+          .map(([l, v, s]) => `<div class="snap-start shrink-0 w-36 md:w-auto card p-3.5 md:p-4 lg:p-5"><p class="text-[11px] font-semibold text-slate-500">${l}</p><p class="text-xl font-black text-slate-900 mt-0.5">${v}</p><p class="text-[10px] text-slate-500">${s}</p></div>`).join('')}
       </div>
 
-      <div class="grid grid-cols-3 p-1 bg-slate-100 rounded-xl text-xs lg:text-sm font-bold sticky z-20 lg:max-w-md lg:top-20" style="top: calc(3.5rem + env(safe-area-inset-top) + .5rem)" role="tablist">
+      <div class="grid grid-cols-3 p-1 bg-slate-100 rounded-xl text-xs lg:text-sm font-bold sticky z-20 md:max-w-md lg:top-20" style="top: calc(3.5rem + env(safe-area-inset-top) + .5rem)" role="tablist">
         ${[['orders', `Orders${newCount ? ` (${newCount})` : ''}`], ['menu', 'Menu'], ['payouts', 'Payouts']].map(([k, l]) =>
           `<a role="tab" aria-selected="${tab === k}" href="#/kitchen?tab=${k}" class="py-2.5 text-center rounded-lg ${tab === k ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}">${l}</a>`).join('')}
       </div>
@@ -989,7 +1005,7 @@ async function kitchenView(query) {
 
 function ordersTab(orders) {
   if (!orders.length) return stateCard('fa-bell-concierge', 'No orders yet', 'New orders show up here, with a badge on the Kitchen tab. Share your kitchen page with neighbors to get your first one.');
-  return `<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 items-start">${orders.map(o => {
+  return `<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 lg:gap-4 items-start">${orders.map(o => {
     const [label, cls, icon] = COOK_STATUS[o.status] || [o.status, 'bg-slate-100', 'fa-circle'];
     const act = (a, text, style) => `<button data-act="cook-order" data-a="${a}" data-code="${esc(o.code)}" class="flex-1 h-11 px-3 rounded-xl text-xs font-bold ${style}">${text}</button>`;
     return `
@@ -1020,7 +1036,7 @@ function ordersTab(orders) {
 function menuTab(dishes) {
   return `
     <button data-act="dish-new" class="btn-primary mb-3 lg:mb-4 lg:w-auto lg:px-6"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add a dish</button>
-    ${dishes.length ? `<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">${dishes.map(d => `
+    ${dishes.length ? `<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 lg:gap-4">${dishes.map(d => `
       <div class="card p-3 flex gap-3 items-center">
         ${dishImg(d.imageUrl, 'w-16 h-16 rounded-xl shrink-0')}
         <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(d.title)}</p><p class="text-xs text-brand-700 font-bold">${money(d.price)} <span class="text-slate-400 font-medium">· ${dishCats(d).map(esc).join(', ')}</span></p>
@@ -1323,6 +1339,8 @@ const ACT = {
   'save': el => toggleSave(Number(el.dataset.id)),
   'fab': () => (S.me.chef ? openDishSheet() : openBasket()),
   'filters': () => openFilters(),
+  'trend-go': el => trendScroll(Number(el.dataset.i)),
+  'trend-step': el => trendScroll(trendIndex() + Number(el.dataset.d)),
   'see-all': () => { S.showAll = true; renderDishList(); },
   'filter-sort': el => setFilters({ sort: el.dataset.v }),
   'filter-diet': el => setFilters({ dietary: el.dataset.v }),

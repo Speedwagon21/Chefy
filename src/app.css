@@ -15,6 +15,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .safe-top { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 .pb-nav { padding-bottom: calc(8.5rem + env(safe-area-inset-bottom)); }
+#basketBar { bottom: calc(6.25rem + env(safe-area-inset-bottom)); }
+
+/* iPad portrait and other tablets: floating tab bar off the bottom edge, wider sheets */
+@media (min-width: 768px) and (max-width: 1023px) {
+  #tabBar { bottom: calc(env(safe-area-inset-bottom) + 1rem); padding-bottom: 0; }
+  #basketBar { bottom: calc(env(safe-area-inset-bottom) + 7.75rem); }
+  .pb-nav { padding-bottom: calc(10rem + env(safe-area-inset-bottom)); }
+  .sheet { max-width: 38rem; }
+}
+/* Touchscreens bigger than a phone (iPads): slightly larger type and controls */
+@media (min-width: 768px) and (pointer: coarse) {
+  html { font-size: 17px; }
+}
 .glass { background: rgba(255,255,255,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 
 .sheet-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(15,23,42,.55); backdrop-filter: blur(2px); }
@@ -33,6 +46,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .nav-top { @apply h-10 px-3.5 rounded-xl text-sm font-bold text-slate-600 flex items-center gap-2 hover:bg-slate-100 hover:text-slate-900; }
 .nav-top[aria-current="page"] { @apply bg-brand-50 text-brand-700; }
 #toast { bottom: calc(10.5rem + env(safe-area-inset-bottom)); }
+@media (min-width: 768px) and (max-width: 1023px) { #toast { bottom: calc(12rem + env(safe-area-inset-bottom)); } }
+@media (min-width: 1024px) and (pointer: coarse) {
+  .nav-top { height: 3rem; padding-left: 1.1rem; padding-right: 1.1rem; font-size: 1rem; }
+}
 
 @media (min-width: 1024px) {
   .pb-nav { padding-bottom: 4rem; }
