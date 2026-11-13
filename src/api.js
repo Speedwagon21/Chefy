@@ -5,13 +5,14 @@ const path = require('node:path');
 const { one, all, run, tx, DATA_DIR, CATEGORIES } = require('./db');
 const auth = require('./auth');
 const pay = require('./payments');
+const { COUNTRIES, countryInfo, currencyRules, publicRegions } = require('./regions');
 const { HttpError, requireUser, requireChef, requireAdmin } = auth;
 
 const router = express.Router();
 
 // ---------- business rules ----------
 const COMMISSION_RATE = 0.10;
-const FEES = { pickup: 149, delivery: 399 };
+const FEES = { pickup: currencyRules('usd').pickup, delivery: currencyRules('usd').delivery }; // US default; see regions.js
 const TIP_OPTIONS = [0, 10, 15, 20, 25];
 const DIETARY = ['', 'Authentic Recipe', 'Vegetarian', 'Vegan', 'Gluten-Free', 'Halal', 'Organic'];
 const PERMIT_STATES = ['CA', 'TX', 'NY', 'FL', 'Other'];
@@ -29,9 +30,12 @@ function oneOf(v, list, field) {
   if (!list.includes(v)) throw new HttpError(400, `${field} is not valid.`);
   return v;
 }
-function cents(v, field = 'Price') {
+function cents(v, currency = 'usd', field = 'Price') {
+  const { minPrice, maxPrice } = currencyRules(currency);
   const n = Math.round(Number(v) * 100);
-  if (!Number.isFinite(n) || n < 100 || n > 50000) throw new HttpError(400, `${field} must be between $1 and $500.`);
+  if (!Number.isFinite(n) || n < minPrice || n > maxPrice) {
+    throw new HttpError(400, `${field} must be between ${money(minPrice, currency)} and ${money(maxPrice, currency)}.`);
+  }
   return n;
 }
 function url(v) {
@@ -56,7 +60,7 @@ function publicChef(c) {
     id: c.user_id, kitchenName: c.kitchen_name, bio: c.bio, cuisine: c.cuisine, neighborhood: c.neighborhood,
     avatarUrl: c.avatar_url, coverUrl: c.cover_url, offersDelivery: !!c.offers_delivery,
     verified: c.permit_status === 'verified', permitLabel: c.permit_status === 'verified' ? permitLabel(c) : null,
-    live: chefIsLive(c), rating: chefRating(c.user_id)
+    live: chefIsLive(c), rating: chefRating(c.user_id), country: c.country, currency: c.currency
   };
 }
 function permitLabel(c) {
@@ -72,9 +76,10 @@ function ownChef(c) {
     payouts: { mode: pay.MODE, ready: pay.MODE === 'demo' ? !!c.payout_bank_label : !!c.charges_enabled, bankLabel: c.payout_bank_label, stripeStarted: !!c.stripe_account_id }
   };
 }
+const chefCurrencyById = id => one('SELECT currency FROM chefs WHERE user_id = ?', id)?.currency || 'usd';
 function dishOut(d) {
   return {
-    id: d.id, chefId: d.chef_id, title: d.title, category: d.category, categories: splitCats(d), price: d.price_cents, prepTime: d.prep_time,
+    id: d.id, chefId: d.chef_id, currency: chefCurrencyById(d.chef_id), title: d.title, category: d.category, categories: splitCats(d), price: d.price_cents, prepTime: d.prep_time,
     dietary: d.dietary, description: d.description, imageUrl: d.image_url, available: !!d.available
   };
 }
@@ -95,7 +100,7 @@ function orderOut(o, viewer) {
   // Pickup address only for orders whose payment was actually authorized and that are still active.
   const paid = !!o.authorized_at && !['canceled', 'declined'].includes(o.status);
   const out = {
-    code: o.code, status: o.status, fulfillment: o.fulfillment, notes: o.notes, deliveryAddress: o.delivery_address,
+    code: o.code, status: o.status, currency: o.currency, fulfillment: o.fulfillment, notes: o.notes, deliveryAddress: o.delivery_address,
     subtotal: o.subtotal_cents, fee: o.fee_cents, tip: o.tip_cents, total: o.total_cents,
     payment: { status: o.payment_status, label: o.card_label, refunded: o.refund_cents },
     issue: o.issue_status ? { status: o.issue_status, reason: o.issue_reason } : null,
@@ -129,7 +134,7 @@ function newCode() {
 router.get('/config', (_req, res) => {
   res.json({
     payments: pay.publicConfig(), commissionRate: COMMISSION_RATE, fees: FEES, tipOptions: TIP_OPTIONS,
-    categories: CATEGORIES, dietary: DIETARY.filter(Boolean), permitStates: PERMIT_STATES
+    categories: CATEGORIES, dietary: DIETARY.filter(Boolean), permitStates: PERMIT_STATES, ...publicRegions()
   });
 });
 
@@ -278,6 +283,17 @@ router.post('/chef', requireUser, (req, res) => {
     offers_delivery: (b.offersDelivery ?? c.offers_delivery) ? 1 : 0,
     accepting_orders: (b.acceptingOrders ?? c.accepting_orders ?? 1) ? 1 : 0
   };
+  // Country sets the currency of the menu, orders and payouts. It's fixed once Stripe or orders depend on it.
+  const country = b.country !== undefined ? oneOf(String(b.country).toUpperCase(), Object.keys(COUNTRIES), 'Country') : (c.country || 'US');
+  if (req.chef && country !== c.country) {
+    if (c.stripe_account_id) throw new HttpError(409, 'Your payout account is already set up for ' + countryInfo(c.country).name + '. Contact Chefy support to change country.');
+    if (one('SELECT 1 FROM orders WHERE chef_id = ? AND status != \'awaiting_payment\' LIMIT 1', c.user_id)) {
+      throw new HttpError(409, 'You already have orders in ' + c.currency.toUpperCase() + ', so your country can\'t be changed here. Contact Chefy support.');
+    }
+    if (pay.MODE === 'demo') fields.payout_bank_label = null; // a bank account is tied to its country
+  }
+  fields.country = country;
+  fields.currency = countryInfo(country).currency;
   if (req.chef) {
     run(`UPDATE chefs SET ${Object.keys(fields).map(k => k + ' = ?').join(', ')} WHERE user_id = ?`, ...Object.values(fields), req.user.id);
   } else {
@@ -315,13 +331,13 @@ function categoryList(b, existing) {
   list.forEach(c => oneOf(c, CATEGORIES, 'Category'));
   return list;
 }
-function dishFields(b, existing = {}) {
+function dishFields(b, existing = {}, currency = 'usd') {
   const cats = categoryList(b, existing);
   return {
     title: str(b.title ?? existing.title, { field: 'Dish name', required: true, max: 80 }),
     category: cats[0],
     categories: cats.join('|'),
-    price_cents: b.price !== undefined ? cents(b.price) : existing.price_cents,
+    price_cents: b.price !== undefined ? cents(b.price, currency) : existing.price_cents,
     prep_time: str(b.prepTime ?? existing.prep_time, { max: 30 }),
     dietary: oneOf(b.dietary ?? existing.dietary ?? '', DIETARY, 'Dietary tag'),
     description: str(b.description ?? existing.description, { field: 'Description', required: true, max: 500 }),
@@ -339,7 +355,7 @@ router.get('/chef/dishes', requireUser, requireChef, (req, res) => {
   res.json({ dishes: all('SELECT * FROM dishes WHERE chef_id = ? AND deleted = 0 ORDER BY created_at DESC', req.user.id).map(dishOut) });
 });
 router.post('/chef/dishes', requireUser, requireChef, (req, res) => {
-  const f = dishFields(req.body);
+  const f = dishFields(req.body, {}, req.chef.currency);
   if (f.price_cents === undefined) throw new HttpError(400, 'Price is required.');
   const r = run(`INSERT INTO dishes (chef_id, ${Object.keys(f).join(', ')}, created_at) VALUES (?, ${Object.keys(f).map(() => '?').join(', ')}, ?)`,
     req.user.id, ...Object.values(f), now());
@@ -347,7 +363,7 @@ router.post('/chef/dishes', requireUser, requireChef, (req, res) => {
 });
 router.patch('/chef/dishes/:id', requireUser, requireChef, (req, res) => {
   const d = ownDish(req);
-  const f = dishFields(req.body, d);
+  const f = dishFields(req.body, d, req.chef.currency);
   run(`UPDATE dishes SET ${Object.keys(f).map(k => k + ' = ?').join(', ')} WHERE id = ?`, ...Object.values(f), d.id);
   res.json({ dish: dishOut(one('SELECT * FROM dishes WHERE id = ?', d.id)) });
 });
@@ -411,7 +427,7 @@ router.post('/chef/orders/:code/:action', requireUser, requireChef, wrap(async (
 router.get('/chef/summary', requireUser, requireChef, wrap(async (req, res) => {
   let chef = req.chef;
   if (pay.MODE === 'stripe' && chef.stripe_account_id) chef = await pay.refreshAccount(chef).catch(() => chef);
-  const id = chef.user_id;
+  const id = chef.user_id, cur = chef.currency;
   const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
   const today = one(`SELECT COALESCE(SUM(chef_payout_cents),0) AS c, COUNT(*) AS n FROM orders
                      WHERE chef_id = ? AND payment_status = 'captured' AND captured_at >= ?`, id, dayStart.getTime());
@@ -422,12 +438,12 @@ router.get('/chef/summary', requireUser, requireChef, wrap(async (req, res) => {
   const ledger = [
     ...all(`SELECT code, chef_payout_cents, subtotal_cents, commission_cents, tip_cents, captured_at, card_label FROM orders
             WHERE chef_id = ? AND captured_at IS NOT NULL ORDER BY captured_at DESC LIMIT 50`, id)
-      .map(o => ({ kind: 'sale', title: `${o.code} sale`, detail: `${money(o.subtotal_cents)} food − ${money(o.commission_cents)} fee + ${money(o.tip_cents)} tip`, amount: o.chef_payout_cents, at: o.captured_at })),
+      .map(o => ({ kind: 'sale', title: `${o.code} sale`, detail: `${money(o.subtotal_cents, cur)} food − ${money(o.commission_cents, cur)} fee + ${money(o.tip_cents, cur)} tip`, amount: o.chef_payout_cents, at: o.captured_at })),
     ...all(`SELECT code, chef_payout_cents, refunded_at FROM orders WHERE chef_id = ? AND refunded_at IS NOT NULL ORDER BY refunded_at DESC LIMIT 50`, id)
       .map(o => ({ kind: 'refund', title: `${o.code} refunded`, detail: 'Customer refunded in full', amount: -o.chef_payout_cents, at: o.refunded_at })),
     ...all('SELECT * FROM payouts WHERE chef_id = ? ORDER BY created_at DESC LIMIT 50', id)
       .map(p => ({ kind: 'payout', title: p.instant ? 'Instant payout' : 'Standard payout',
-        detail: `To ${p.destination}${p.fee_cents ? `, ${money(p.fee_cents)} fee` : ''}. ${p.status === 'paid' || (p.arrives_at && p.arrives_at < now()) ? 'Paid' : 'Arrives ' + new Date(p.arrives_at).toDateString().slice(0, 10)}`,
+        detail: `To ${p.destination}${p.fee_cents ? `, ${money(p.fee_cents, cur)} fee` : ''}. ${p.status === 'paid' || (p.arrives_at && p.arrives_at < now()) ? 'Paid' : 'Arrives ' + new Date(p.arrives_at).toDateString().slice(0, 10)}`,
         amount: -p.amount_cents, at: p.created_at }))
   ].sort((a, b) => b.at - a.at).slice(0, 60);
   res.json({
@@ -436,15 +452,25 @@ router.get('/chef/summary', requireUser, requireChef, wrap(async (req, res) => {
   });
 }));
 
-function money(c) { return (c < 0 ? '−$' : '$') + (Math.abs(c) / 100).toFixed(2); }
+function money(c, currency = 'usd') {
+  const s = new Intl.NumberFormat('en', { style: 'currency', currency: currency.toUpperCase() }).format(Math.abs(c) / 100);
+  return (c < 0 ? '−' : '') + s;
+}
 
 router.post('/chef/bank', requireUser, requireChef, (req, res) => {
   if (pay.MODE !== 'demo') throw new HttpError(400, 'Bank details are managed securely by Stripe. Use "Set up payouts".');
   const bank = str(req.body.bank, { field: 'Bank name', required: true, max: 40 });
-  const routing = String(req.body.routing || '').replace(/\D/g, '');
-  const account = String(req.body.account || '').replace(/\D/g, '');
-  if (routing.length !== 9) throw new HttpError(400, 'Routing number must be 9 digits.');
-  if (account.length < 4 || account.length > 17) throw new HttpError(400, 'Account number must be 4–17 digits.');
+  let account;
+  if (req.chef.country === 'US') {
+    const routing = String(req.body.routing || '').replace(/\D/g, '');
+    account = String(req.body.account || '').replace(/\D/g, '');
+    if (routing.length !== 9) throw new HttpError(400, 'Routing number must be 9 digits.');
+    if (account.length < 4 || account.length > 17) throw new HttpError(400, 'Account number must be 4–17 digits.');
+  } else {
+    // IBAN or local account number, depending on the country
+    account = String(req.body.account || '').replace(/[\s-]/g, '').toUpperCase();
+    if (!/^[A-Z0-9]{6,34}$/.test(account)) throw new HttpError(400, 'Enter your IBAN or account number (letters and digits only).');
+  }
   run('UPDATE chefs SET payout_bank_label = ? WHERE user_id = ?', `${bank} •••• ${account.slice(-4)}`, req.user.id);
   req.chef = one('SELECT * FROM chefs WHERE user_id = ?', req.user.id);
   res.json(meOut(req));
@@ -495,21 +521,22 @@ router.post('/orders', requireUser, wrap(async (req, res) => {
     deliveryAddress = str(req.body.deliveryAddress, { field: 'Delivery address', required: true, min: 5, max: 200 });
   }
 
+  const currency = chef.currency;
   const subtotal = lines.reduce((s, l) => s + l.d.price_cents * l.qty, 0);
-  const fee = FEES[fulfillment];
+  const fee = currencyRules(currency)[fulfillment];
   const tip = Math.round(subtotal * tipPercent / 100);
   const commission = Math.round(subtotal * COMMISSION_RATE);
   const order = {
-    code: newCode(), subtotal_cents: subtotal, fee_cents: fee, tip_cents: tip, total_cents: subtotal + fee + tip,
+    code: newCode(), currency, subtotal_cents: subtotal, fee_cents: fee, tip_cents: tip, total_cents: subtotal + fee + tip,
     commission_cents: commission, chef_payout_cents: subtotal - commission + tip
   };
   const hold = await pay.createHold(order, chef, req.user);
   const id = tx(() => {
     const r = run(`INSERT INTO orders (code, eater_id, chef_id, status, fulfillment, delivery_address, notes, subtotal_cents, fee_cents,
-                   tip_cents, total_cents, commission_cents, chef_payout_cents, payment_provider, payment_intent_id, created_at)
-                   VALUES (?, ?, ?, 'awaiting_payment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                   tip_cents, total_cents, commission_cents, chef_payout_cents, payment_provider, payment_intent_id, created_at, currency)
+                   VALUES (?, ?, ?, 'awaiting_payment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       order.code, req.user.id, chef.user_id, fulfillment, deliveryAddress, notes || null, subtotal, fee, tip, order.total_cents,
-      commission, order.chef_payout_cents, pay.MODE, hold.intentId, now());
+      commission, order.chef_payout_cents, pay.MODE, hold.intentId, now(), currency);
     for (const l of lines) {
       run('INSERT INTO order_items (order_id, dish_id, title, price_cents, qty) VALUES (?, ?, ?, ?, ?)',
         r.lastInsertRowid, l.d.id, l.d.title, l.d.price_cents, l.qty);
@@ -582,6 +609,9 @@ router.get('/admin/queue', requireUser, requireAdmin, (_req, res) => {
   const issues = all(`SELECT * FROM orders WHERE issue_status = 'open' ORDER BY created_at`).map(o => orderOut(o, 'admin'));
   const totals = one(`SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN payment_status='captured' THEN commission_cents + fee_cents END),0) AS revenue
                       FROM orders WHERE status != 'awaiting_payment'`);
+  // Revenue can't be added up across currencies, so it's also given per currency.
+  totals.revenueByCurrency = all(`SELECT currency, SUM(commission_cents + fee_cents) AS amount FROM orders
+                                  WHERE payment_status = 'captured' GROUP BY currency ORDER BY amount DESC`);
   res.json({ permits, issues, totals });
 });
 router.post('/admin/permits/:chefId', requireUser, requireAdmin, (req, res) => {

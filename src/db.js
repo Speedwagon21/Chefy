@@ -158,6 +158,17 @@ function migrateCategories() {
 }
 migrateCategories();
 
+// Country and currency: cooks pick their country; orders and payouts remember the currency they were made in.
+// Rows from before this existed were all US dollars.
+function addColumn(table, col, def) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+  if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+}
+addColumn('chefs', 'country', "TEXT NOT NULL DEFAULT 'US'");
+addColumn('chefs', 'currency', "TEXT NOT NULL DEFAULT 'usd'");
+addColumn('orders', 'currency', "TEXT NOT NULL DEFAULT 'usd'");
+addColumn('payouts', 'currency', "TEXT NOT NULL DEFAULT 'usd'");
+
 // Small helpers so route code stays readable
 const one = (sql, ...p) => db.prepare(sql).get(...p);
 const all = (sql, ...p) => db.prepare(sql).all(...p);

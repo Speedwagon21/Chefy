@@ -4,14 +4,21 @@
 //    Money goes straight to the cook's Stripe Connect account; Chefy keeps commission + fee as the
 //    application fee.
 //  - "demo": no keys set. Same flow, simulated, so the whole app can be tried without Stripe.
+// Cooks can be in any country listed in regions.js. Each order is charged in the cook's currency, and when the
+// cook is in a different country from Chefy's own Stripe account the charge is made on the cook's behalf
+// (on_behalf_of), which Stripe requires for cross-border destination charges.
 const crypto = require('node:crypto');
 const { one, all, run } = require('./db');
 const { HttpError } = require('./auth');
+const { countryInfo, DEFAULT_COUNTRY } = require('./regions');
 
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '';
 const MODE = STRIPE_KEY ? 'stripe' : 'demo';
 const PUBLIC_URL = (process.env.PUBLIC_URL || 'http://localhost:3000').replace(/\/$/, '');
 const INSTANT_FEE_RATE = 0.015;
+// Country of Chefy's own Stripe account (two letters, e.g. US, GB, DE).
+const PLATFORM_COUNTRY = String(process.env.PLATFORM_COUNTRY || DEFAULT_COUNTRY).toUpperCase();
+const chefCurrency = chef => chef.currency || countryInfo(chef.country).currency;
 
 let stripe = null;
 if (MODE === 'stripe') stripe = require('stripe')(STRIPE_KEY);
@@ -25,9 +32,9 @@ async function createHold(order, chef, eater) {
   if (!chef.stripe_account_id || !chef.charges_enabled) {
     throw new HttpError(409, 'This cook has not finished payout setup, so they cannot take card orders yet.');
   }
-  const pi = await stripe.paymentIntents.create({
+  const params = {
     amount: order.total_cents,
-    currency: 'usd',
+    currency: order.currency || chefCurrency(chef),
     capture_method: 'manual',
     automatic_payment_methods: { enabled: true },
     application_fee_amount: order.commission_cents + order.fee_cents,
@@ -35,7 +42,10 @@ async function createHold(order, chef, eater) {
     receipt_email: eater.email,
     description: `Chefy order ${order.code} from ${chef.kitchen_name}`,
     metadata: { order_code: order.code, chef_id: String(chef.user_id), eater_id: String(eater.id) }
-  }, { idempotencyKey: `hold-${order.code}` });
+  };
+  // Cross-border: the cook's account is the business of record, so the charge settles in their country.
+  if ((chef.country || DEFAULT_COUNTRY) !== PLATFORM_COUNTRY) params.on_behalf_of = chef.stripe_account_id;
+  const pi = await stripe.paymentIntents.create(params, { idempotencyKey: `hold-${order.code}` });
   return { intentId: pi.id, clientSecret: pi.client_secret };
 }
 
@@ -89,7 +99,8 @@ async function startOnboarding(chef, user) {
   if (!accountId) {
     const acct = await stripe.accounts.create({
       type: 'express',
-      country: 'US',
+      country: chef.country || DEFAULT_COUNTRY,
+      default_currency: chefCurrency(chef),
       email: user.email,
       business_type: 'individual',
       capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
@@ -127,40 +138,42 @@ async function dashboardLink(chef) {
 // Demo balance comes from Chefy's own ledger; Stripe balance from the cook's connected account.
 async function balance(chef) {
   const pending = one(`SELECT COALESCE(SUM(chef_payout_cents),0) AS c FROM orders
-                       WHERE chef_id = ? AND payment_status = 'authorized'`, chef.user_id).c;
+                       WHERE chef_id = ? AND payment_status = 'authorized' AND currency = ?`, chef.user_id, chefCurrency(chef)).c;
   if (MODE === 'demo') {
     const earned = one(`SELECT COALESCE(SUM(chef_payout_cents),0) AS c FROM orders
-                        WHERE chef_id = ? AND payment_status = 'captured'`, chef.user_id).c;
-    const paid = one(`SELECT COALESCE(SUM(amount_cents),0) AS c FROM payouts WHERE chef_id = ?`, chef.user_id).c;
+                        WHERE chef_id = ? AND payment_status = 'captured' AND currency = ?`, chef.user_id, chefCurrency(chef)).c;
+    const paid = one(`SELECT COALESCE(SUM(amount_cents),0) AS c FROM payouts WHERE chef_id = ? AND currency = ?`, chef.user_id, chefCurrency(chef)).c;
     return { available: earned - paid, pending, held: pending, inTransit: 0 };
   }
   if (!chef.stripe_account_id) return { available: 0, pending: 0, held: pending, inTransit: 0 };
   const b = await stripe.balance.retrieve({}, { stripeAccount: chef.stripe_account_id });
-  const usd = arr => (arr || []).filter(x => x.currency === 'usd').reduce((s, x) => s + x.amount, 0);
-  return { available: usd(b.available), pending: usd(b.pending), held: pending, inTransit: 0, instantAvailable: usd(b.instant_available) };
+  const cur = chefCurrency(chef);
+  const sum = arr => (arr || []).filter(x => x.currency === cur).reduce((s, x) => s + x.amount, 0);
+  return { available: sum(b.available), pending: sum(b.pending), held: pending, inTransit: 0, instantAvailable: sum(b.instant_available) };
 }
 
 async function payout(chef, instant) {
   const bal = await balance(chef);
+  const currency = chefCurrency(chef);
   const amount = instant && MODE === 'stripe' ? (bal.instantAvailable || 0) : bal.available;
   if (amount <= 0) throw new HttpError(400, 'Nothing available to cash out yet.');
   const now = Date.now();
   if (MODE === 'demo') {
     const fee = instant ? Math.round(amount * INSTANT_FEE_RATE) : 0;
     const arrives = instant ? now : addBusinessDays(now, 2);
-    run(`INSERT INTO payouts (chef_id, amount_cents, fee_cents, instant, status, destination, arrives_at, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, chef.user_id, amount, fee, instant ? 1 : 0,
-      instant ? 'paid' : 'in_transit', chef.payout_bank_label || 'Bank account', arrives, now);
-    return { amount, fee };
+    run(`INSERT INTO payouts (chef_id, amount_cents, fee_cents, instant, status, destination, arrives_at, created_at, currency)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, chef.user_id, amount, fee, instant ? 1 : 0,
+      instant ? 'paid' : 'in_transit', chef.payout_bank_label || 'Bank account', arrives, now, currency);
+    return { amount, fee, currency };
   }
   const po = await stripe.payouts.create(
-    { amount, currency: 'usd', method: instant ? 'instant' : 'standard' },
+    { amount, currency, method: instant ? 'instant' : 'standard' },
     { stripeAccount: chef.stripe_account_id }
   );
-  run(`INSERT INTO payouts (chef_id, amount_cents, fee_cents, instant, status, provider_id, destination, arrives_at, created_at)
-       VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?)`, chef.user_id, amount, instant ? 1 : 0, po.status,
-    po.id, chef.payout_bank_label || 'Bank account', (po.arrival_date || 0) * 1000, now);
-  return { amount, fee: 0 };
+  run(`INSERT INTO payouts (chef_id, amount_cents, fee_cents, instant, status, provider_id, destination, arrives_at, created_at, currency)
+       VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`, chef.user_id, amount, instant ? 1 : 0, po.status,
+    po.id, chef.payout_bank_label || 'Bank account', (po.arrival_date || 0) * 1000, now, currency);
+  return { amount, fee: 0, currency };
 }
 
 function addBusinessDays(ts, n) {
@@ -189,6 +202,6 @@ function publicConfig() {
 }
 
 module.exports = {
-  MODE, createHold, checkHold, capture, releaseHold, refund,
+  MODE, PLATFORM_COUNTRY, chefCurrency, createHold, checkHold, capture, releaseHold, refund,
   startOnboarding, refreshAccount, dashboardLink, balance, payout, constructEvent, publicConfig
 };
