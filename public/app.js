@@ -5,7 +5,14 @@
 const $ = (s, r = document) => r.querySelector(s);
 const view = $('#view');
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const money = c => (c < 0 ? '−$' : '$') + (Math.abs(c || 0) / 100).toFixed(2);
+// Amounts are in minor units (cents, pence…). Each kitchen sells in its own currency, so pass it in.
+const moneyFmt = {};
+const money = (c, cur = 'usd') => {
+  const code = String(cur || 'usd').toUpperCase();
+  const f = moneyFmt[code] ??= new Intl.NumberFormat(undefined, { style: 'currency', currency: code });
+  return (c < 0 ? '−' : '') + f.format(Math.abs(c || 0) / 100);
+};
+const myCur = () => S.me?.chef?.currency || 'usd';
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } }
@@ -84,13 +91,14 @@ const S = {
   stripe: null,
   kitchenSeen: new Set(store.get('chefy_kitchen_seen', []))
 };
-function emptyBasket() { return { chefId: null, chefName: '', offersDelivery: false, items: {}, fulfillment: 'pickup', tip: 15, address: '', notes: '' }; }
+function emptyBasket() { return { chefId: null, chefName: '', currency: 'usd', offersDelivery: false, items: {}, fulfillment: 'pickup', tip: 15, address: '', notes: '' }; }
 function saveBasket() { store.set('chefy_basket', S.basket); updateBasketBar(); }
 const basketLines = () => Object.entries(S.basket.items).map(([id, it]) => ({ dishId: Number(id), ...it }));
 const basketCount = () => basketLines().reduce((s, l) => s + l.qty, 0);
 function basketTotals() {
   const subtotal = basketLines().reduce((s, l) => s + l.price * l.qty, 0);
-  const fee = S.config?.fees?.[S.basket.fulfillment] ?? 149;
+  const rules = S.config?.currencies?.[S.basket.currency || 'usd'] || S.config?.fees || {};
+  const fee = rules[S.basket.fulfillment] ?? 149;
   const tip = Math.round(subtotal * S.basket.tip / 100);
   return { subtotal, fee, tip, total: subtotal + fee + tip };
 }
@@ -151,7 +159,7 @@ function updateBasketBar() {
   const bar = $('#basketBar');
   bar.classList.toggle('hidden', !(onShop && n > 0) || !!$('#sheetRoot').firstChild);
   $('#basketBarCount').textContent = n;
-  $('#basketBarTotal').textContent = money(basketTotals().subtotal);
+  $('#basketBarTotal').textContent = money(basketTotals().subtotal, S.basket.currency);
   setHeader();
 }
 
@@ -433,7 +441,7 @@ function dishCard(d) {
         <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 font-semibold text-slate-800">${r.count ? `<i class="fa-solid fa-star text-amber-400" aria-hidden="true"></i> ${r.average.toFixed(1)}<span class="sr-only"> stars</span>` : 'New cook'}</span>
         ${d.prepTime ? `<span><i class="fa-regular fa-clock" aria-hidden="true"></i> ${esc(d.prepTime)}</span>` : ''}</p>
       <div class="mt-auto pt-1.5 flex items-center justify-between gap-2">
-        <span class="text-base lg:text-lg font-black text-slate-900 tabular-nums">${money(d.price)}</span>
+        <span class="text-base lg:text-lg font-black text-slate-900 tabular-nums">${money(d.price, d.currency)}</span>
         ${!d.available ? '' : inBasket ? stepperSm(d.id, inBasket) :
           `<button data-act="add" data-id="${d.id}" class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center shadow-md" aria-label="Add ${esc(d.title)} to basket"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>`}
       </div>
@@ -484,7 +492,7 @@ async function openDish(id) {
         <i class="fa-solid fa-chevron-right text-slate-500" aria-hidden="true"></i></a>
       ${d.description ? `<p class="text-[15px] text-slate-700 leading-relaxed">${esc(d.description)}</p>` : ''}
       <p class="text-sm text-slate-500">Pickup${c.offersDelivery ? ' or local delivery' : ' only'}. The address is shown after you order.</p>
-      ${d.available ? `<button data-act="add-close" data-id="${d.id}" class="btn-primary !justify-between"><span>Add to basket</span><span class="tabular-nums">${money(d.price)}</span></button>`
+      ${d.available ? `<button data-act="add-close" data-id="${d.id}" class="btn-primary !justify-between"><span>Add to basket</span><span class="tabular-nums">${money(d.price, d.currency)}</span></button>`
         : `<p class="p-3 rounded-xl bg-slate-100 text-sm font-semibold text-slate-600 text-center">Sold out today. Save it and check back tomorrow.</p>`}
     </div>`, d.title);
 }
@@ -565,6 +573,7 @@ function addToBasket(id) {
   }
   S.basket.chefId = d.chefId;
   S.basket.chefName = chef.kitchenName;
+  S.basket.currency = d.currency || chef.currency || 'usd';
   S.basket.offersDelivery = chef.offersDelivery;
   const cur = S.basket.items[id];
   S.basket.items[id] = { qty: (cur?.qty || 0) + 1, title: d.title, price: d.price, imageUrl: d.imageUrl };
@@ -658,7 +667,7 @@ function renderBasketSheet() {
       <div class="divide-y divide-slate-100">
         ${lines.map(l => `<div class="flex items-center gap-3 py-2.5">
             ${dishImg(l.imageUrl, 'w-12 h-12 rounded-xl shrink-0')}
-            <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(l.title)}</p><p class="text-xs font-semibold text-brand-700">${money(l.price)}</p></div>
+            <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(l.title)}</p><p class="text-xs font-semibold text-brand-700">${money(l.price, S.basket.currency)}</p></div>
             ${stepper(l.dishId, l.qty)}</div>`).join('')}
       </div>
       <fieldset>
@@ -680,12 +689,12 @@ function renderBasketSheet() {
         </div>
       </fieldset>
       <dl class="text-sm space-y-1.5 pt-3 border-t border-slate-100">
-        <div class="flex justify-between text-slate-600"><dt>Food</dt><dd>${money(t.subtotal)}</dd></div>
-        <div class="flex justify-between text-slate-600"><dt>${b.fulfillment === 'delivery' ? 'Delivery fee' : 'Service fee'}</dt><dd>${money(t.fee)}</dd></div>
-        <div class="flex justify-between text-slate-600"><dt>Tip</dt><dd>${money(t.tip)}</dd></div>
-        <div class="flex justify-between font-black text-slate-900 text-base pt-1.5 border-t border-slate-100"><dt>Total</dt><dd>${money(t.total)}</dd></div>
+        <div class="flex justify-between text-slate-600"><dt>Food</dt><dd>${money(t.subtotal, S.basket.currency)}</dd></div>
+        <div class="flex justify-between text-slate-600"><dt>${b.fulfillment === 'delivery' ? 'Delivery fee' : 'Service fee'}</dt><dd>${money(t.fee, S.basket.currency)}</dd></div>
+        <div class="flex justify-between text-slate-600"><dt>Tip</dt><dd>${money(t.tip, S.basket.currency)}</dd></div>
+        <div class="flex justify-between font-black text-slate-900 text-base pt-1.5 border-t border-slate-100"><dt>Total</dt><dd>${money(t.total, S.basket.currency)}</dd></div>
       </dl>
-      <form data-form="checkout">${errorBox()}<button class="btn-primary mt-3 !justify-between" type="submit"><span>Checkout</span><span class="tabular-nums">${money(t.total)}</span></button></form>
+      <form data-form="checkout">${errorBox()}<button class="btn-primary mt-3 !justify-between" type="submit"><span>Checkout</span><span class="tabular-nums">${money(t.total, S.basket.currency)}</span></button></form>
       <p class="text-xs text-center text-slate-500"><i class="fa-solid fa-shield-halved mr-1" aria-hidden="true"></i>Your card is held, not charged, until the cook marks your food ready.</p>
     </div>`;
 }
@@ -714,7 +723,7 @@ async function openPaymentSheet(order, clientSecret) {
   openSheet(sheetHeader('Pay securely', `${esc(order.chef.kitchenName)}, order ${esc(order.code)}`) + `
     <form data-form="pay" class="p-5 space-y-4" novalidate>
       <div class="p-4 rounded-2xl bg-brand-50 border border-brand-100">
-        <div class="flex items-center justify-between"><span class="text-xs font-semibold text-slate-600">Amount held today</span><span class="text-2xl font-black text-slate-900">${money(order.total)}</span></div>
+        <div class="flex items-center justify-between"><span class="text-xs font-semibold text-slate-600">Amount held today</span><span class="text-2xl font-black text-slate-900">${money(order.total, order.currency)}</span></div>
         <p class="text-xs text-slate-600 mt-1">Charged only when the cook marks your order ready. Released if they decline.</p>
       </div>
       ${stripeMode ? `<div id="payment-element" class="min-h-[160px]"><div class="skeleton h-40"></div></div>` : `
@@ -731,7 +740,7 @@ async function openPaymentSheet(order, clientSecret) {
           <p class="p-3 bg-sky-50 border border-sky-100 rounded-xl text-xs text-sky-900"><strong>Demo payments. No real charge.</strong> Use 4242 4242 4242 4242 with any future date. 4000 0000 0000 0002 is declined.</p>
         </div>`}
       ${errorBox()}
-      <button class="btn-dark" type="submit" ${stripeMode ? 'disabled' : ''}><i class="fa-solid fa-lock text-xs" aria-hidden="true"></i> Pay ${money(order.total)}</button>
+      <button class="btn-dark" type="submit" ${stripeMode ? 'disabled' : ''}><i class="fa-solid fa-lock text-xs" aria-hidden="true"></i> Pay ${money(order.total, order.currency)}</button>
     </form>`, 'Payment', () => {
     // Closed without paying: release the pending checkout so nothing is left on hold.
     if (S.pendingOrder && S.pendingOrder.code === order.code) {
@@ -842,7 +851,7 @@ async function ordersView() {
       <div class="flex items-center gap-3">
         ${avatar(o.chef.avatarUrl, o.chef.kitchenName)}
         <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 truncate">${esc(o.chef.kitchenName)}</p><p class="text-xs text-slate-500">${meta([esc(o.code), timeAgo(o.times.created)])}</p></div>
-        <span class="text-sm font-black text-slate-900">${money(o.total)}</span>
+        <span class="text-sm font-black text-slate-900">${money(o.total, o.currency)}</span>
       </div>
       <p class="text-xs text-slate-600 line-clamp-1">${o.items.map(i => `${i.qty}× ${esc(i.title)}`).join(', ')}</p>
       <div class="flex gap-1.5 flex-wrap">${statusChip(o)} ${payChip(o.payment)}${o.issue ? ` <span class="chip bg-rose-50 text-rose-700">Problem ${esc(o.issue.status)}</span>` : ''}</div>
@@ -891,17 +900,17 @@ async function orderView(code, query) {
       ${o.fulfillment === 'delivery' ? `<div class="card p-4"><p class="text-xs font-bold text-slate-500">Delivering to</p><p class="text-sm font-bold text-slate-900 mt-1">${esc(o.deliveryAddress)}</p></div>` : ''}
 
       <div class="card p-4 space-y-2">
-        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-slate-700">${i.qty}× ${esc(i.title)}</span><span class="font-semibold">${money(i.price * i.qty)}</span></div>`).join('')}
+        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-slate-700">${i.qty}× ${esc(i.title)}</span><span class="font-semibold">${money(i.price * i.qty, o.currency)}</span></div>`).join('')}
         ${o.notes ? `<p class="text-xs text-slate-500 italic">“${esc(o.notes)}”</p>` : ''}
         <dl class="text-xs space-y-1 pt-2 border-t border-slate-100 text-slate-600">
-          <div class="flex justify-between"><dt>${o.fulfillment === 'delivery' ? 'Delivery fee' : 'Service fee'}</dt><dd>${money(o.fee)}</dd></div>
-          <div class="flex justify-between"><dt>Tip</dt><dd>${money(o.tip)}</dd></div>
-          <div class="flex justify-between text-sm font-black text-slate-900"><dt>Total</dt><dd>${money(o.total)}</dd></div>
+          <div class="flex justify-between"><dt>${o.fulfillment === 'delivery' ? 'Delivery fee' : 'Service fee'}</dt><dd>${money(o.fee, o.currency)}</dd></div>
+          <div class="flex justify-between"><dt>Tip</dt><dd>${money(o.tip, o.currency)}</dd></div>
+          <div class="flex justify-between text-sm font-black text-slate-900"><dt>Total</dt><dd>${money(o.total, o.currency)}</dd></div>
         </dl>
         <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
           <span class="text-slate-600"><i class="fa-regular fa-credit-card mr-1" aria-hidden="true"></i>${esc(o.payment.label || 'Card')}</span>${payChip(o.payment)}
         </div>
-        ${o.payment.status === 'authorized' ? `<p class="text-xs text-slate-500">${money(o.total)} is held on your card. You're charged when the cook marks it ready.</p>` : ''}
+        ${o.payment.status === 'authorized' ? `<p class="text-xs text-slate-500">${money(o.total, o.currency)} is held on your card. You're charged when the cook marks it ready.</p>` : ''}
       </div>
 
       ${o.issue ? `<div class="card p-4 border-rose-200 bg-rose-50/50 text-xs space-y-1"><p class="font-bold text-rose-900">Problem reported: ${esc({ open: 'under review', refunded: 'refunded in full', dismissed: 'closed' }[o.issue.status] || o.issue.status)}</p><p class="text-rose-800">“${esc(o.issue.reason)}”</p></div>` : ''}
@@ -987,10 +996,10 @@ async function kitchenView(query) {
       </div>
 
       <div class="-mx-4 px-4 scroll-px-4 md:mx-0 md:px-0 flex gap-3 overflow-x-auto hide-scrollbar snap-x md:grid md:grid-cols-4 md:gap-4 md:overflow-visible">
-        ${[["Today's earnings", money(sum.stats.todayEarned), `${sum.stats.todayOrders} order${sum.stats.todayOrders === 1 ? '' : 's'} charged`],
+        ${[["Today's earnings", money(sum.stats.todayEarned, sum.chef.currency), `${sum.stats.todayOrders} order${sum.stats.todayOrders === 1 ? '' : 's'} charged`],
            ['Active orders', sum.stats.activeOrders, newCount ? `${newCount} new` : 'All handled'],
            ['Dishes', sum.stats.dishes, `${sum.stats.liveDishes} available`],
-           ['Balance', sum.balance ? money(sum.balance.available) : '—', 'Ready to cash out']]
+           ['Balance', sum.balance ? money(sum.balance.available, sum.chef.currency) : '—', 'Ready to cash out']]
           .map(([l, v, s]) => `<div class="snap-start shrink-0 w-36 md:w-auto card p-3.5 md:p-4 lg:p-5"><p class="text-xs font-semibold text-slate-500">${l}</p><p class="text-xl font-black text-slate-900 mt-0.5">${v}</p><p class="text-xs text-slate-500">${s}</p></div>`).join('')}
       </div>
 
@@ -1014,13 +1023,13 @@ function ordersTab(orders) {
           <p class="text-xs text-slate-500">${meta([esc(o.code), timeAgo(o.times.created), o.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'])}</p></div>
         <span class="chip ${cls}"><i class="fa-solid ${icon}" aria-hidden="true"></i> ${label}</span>
       </div>
-      <div class="space-y-1">${o.items.map(i => `<div class="flex justify-between text-sm"><span>${i.qty}× ${esc(i.title)}</span><span class="font-semibold">${money(i.price * i.qty)}</span></div>`).join('')}</div>
+      <div class="space-y-1">${o.items.map(i => `<div class="flex justify-between text-sm"><span>${i.qty}× ${esc(i.title)}</span><span class="font-semibold">${money(i.price * i.qty, o.currency)}</span></div>`).join('')}</div>
       ${o.notes ? `<p class="text-sm pl-3 border-l-2 border-amber-400 text-amber-900"><i class="fa-solid fa-note-sticky mr-1" aria-hidden="true"></i>${esc(o.notes)}</p>` : ''}
       ${o.fulfillment === 'delivery' ? `<p class="text-xs text-slate-700"><i class="fa-solid fa-location-dot text-brand-600 mr-1" aria-hidden="true"></i>${esc(o.deliveryAddress)}</p>` : ''}
       ${o.eater.phone ? `<a href="tel:${esc(o.eater.phone)}" class="text-xs font-bold text-brand-700 inline-flex items-center gap-1 h-9"><i class="fa-solid fa-phone" aria-hidden="true"></i> ${esc(o.eater.phone)}</a>` : ''}
       ${o.issue && o.issue.status === 'open' ? `<p class="text-sm pl-3 border-l-2 border-rose-400 text-rose-800"><strong>Customer reported a problem:</strong> ${esc(o.issue.reason)}</p>` : ''}
       <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-        <span class="text-slate-600">You earn <strong class="text-emerald-700">${money(o.chefPayout)}</strong> <span class="text-slate-500">(${money(o.total)} total)</span></span>${payChip(o.payment)}
+        <span class="text-slate-600">You earn <strong class="text-emerald-700">${money(o.chefPayout, o.currency)}</strong> <span class="text-slate-500">(${money(o.total, o.currency)} total)</span></span>${payChip(o.payment)}
       </div>
       <div class="flex gap-2">
         ${o.status === 'received' ? act('decline', 'Decline', 'border border-rose-200 text-rose-700') + act('accept', 'Accept &amp; start', 'bg-brand-600 text-white') : ''}
@@ -1038,7 +1047,7 @@ function menuTab(dishes) {
     ${dishes.length ? `<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 lg:gap-4">${dishes.map(d => `
       <div class="card p-3 flex gap-3 items-center">
         ${dishImg(d.imageUrl, 'w-16 h-16 rounded-xl shrink-0')}
-        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(d.title)}</p><p class="text-xs text-brand-700 font-bold">${money(d.price)} <span class="text-slate-500 font-normal ml-2">${dishCats(d).map(esc).join(', ')}</span></p>
+        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-900 line-clamp-1">${esc(d.title)}</p><p class="text-xs text-brand-700 font-bold">${money(d.price, d.currency)} <span class="text-slate-500 font-normal ml-2">${dishCats(d).map(esc).join(', ')}</span></p>
           <label class="mt-1 inline-flex items-center gap-2 text-xs font-bold ${d.available ? 'text-emerald-700' : 'text-slate-500'}">
             <input type="checkbox" data-change="dish-available" data-id="${d.id}" ${d.available ? 'checked' : ''} class="w-5 h-5 accent-emerald-600"> ${d.available ? 'Available' : 'Sold out'}</label></div>
         <button data-act="dish-edit" data-id="${d.id}" class="w-11 h-11 rounded-xl border border-slate-200 text-slate-600" aria-label="Edit ${esc(d.title)}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
@@ -1053,8 +1062,8 @@ function payoutsTab(sum) {
       <div class="space-y-4">
       <div class="rounded-2xl p-5 lg:p-6 bg-gradient-to-br from-slate-900 to-brand-950 text-white">
         <p class="text-xs font-semibold text-slate-300">Available to cash out</p>
-        <p class="text-3xl font-black mt-1">${money(b.available)}</p>
-        <p class="text-xs text-brand-200 mt-1">${money(b.held)} more is held on customers' cards for orders in progress.</p>
+        <p class="text-3xl font-black mt-1">${money(b.available, c.currency)}</p>
+        <p class="text-xs text-brand-200 mt-1">${money(b.held, c.currency)} more is held on customers' cards for orders in progress.</p>
       </div>
       ${c.payouts.ready ? `
       <div class="grid grid-cols-2 gap-2">
@@ -1082,7 +1091,7 @@ function payoutsTab(sum) {
             <span class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${e.kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : e.kind === 'refund' ? 'bg-rose-50 text-rose-600' : 'bg-brand-50 text-brand-700'}">
               <i class="fa-solid ${e.kind === 'sale' ? 'fa-arrow-down' : e.kind === 'refund' ? 'fa-rotate-left' : 'fa-building-columns'} text-xs" aria-hidden="true"></i></span>
             <div class="flex-1 min-w-0"><p class="text-xs font-bold text-slate-900 truncate">${esc(e.title)}</p><p class="text-xs text-slate-500 truncate">${esc(e.detail)}</p></div>
-            <div class="text-right"><p class="text-xs font-black ${e.amount > 0 ? 'text-emerald-700' : 'text-slate-900'}">${e.amount > 0 ? '+' : ''}${money(e.amount)}</p><p class="text-xs text-slate-500">${timeAgo(e.at)}</p></div>
+            <div class="text-right"><p class="text-xs font-black ${e.amount > 0 ? 'text-emerald-700' : 'text-slate-900'}">${e.amount > 0 ? '+' : ''}${money(e.amount, sum.chef.currency)}</p><p class="text-xs text-slate-500">${timeAgo(e.at)}</p></div>
           </div>`).join('')}</div>` : `<p class="text-xs text-slate-500 py-3">Charged orders, refunds and payouts will show up here.</p>`}
       </div>
     </div>`;
@@ -1115,7 +1124,8 @@ function dishForm(d = {}, { submitLabel = 'Save dish', formName = 'dish' } = {})
           <input type="checkbox" name="categories" value="${esc(c)}" data-change="cat-limit" class="peer sr-only" ${(d.id ? dishCats(d) : []).includes(c) ? 'checked' : ''}>
           <span class="h-10 px-3.5 rounded-full text-sm font-bold flex items-center gap-1.5 bg-slate-100 text-slate-800 peer-checked:bg-brand-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500"><i class="fa-solid ${CAT_ICONS[c] || 'fa-utensils'}" aria-hidden="true"></i>${esc(c)}</span></label>`).join('')}</div>
       </fieldset>
-      <div><label class="label" for="dPrice">Price ($)</label><input id="dPrice" name="price" type="number" step="0.01" min="1" max="500" inputmode="decimal" required value="${d.price ? (d.price / 100).toFixed(2) : ''}" class="field" placeholder="14.50"></div>
+      ${(() => { const cur = myCur(), r = S.config.currencies?.[cur] || { minPrice: 100, maxPrice: 50000 };
+        return `<div><label class="label" for="dPrice">Price (${cur.toUpperCase()})</label><input id="dPrice" name="price" type="number" step="0.01" min="${r.minPrice / 100}" max="${r.maxPrice / 100}" inputmode="decimal" required value="${d.price ? (d.price / 100).toFixed(2) : ''}" class="field" placeholder="${((r.minPrice * 14.5) / 100).toFixed(2)}"></div>`; })()}
       <div class="grid grid-cols-2 gap-3">
         <div><label class="label" for="dPrep">Ready in</label><input id="dPrep" name="prepTime" maxlength="30" value="${esc(d.prepTime || '')}" class="field" placeholder="25 min"></div>
         <div><label class="label" for="dDiet">Dietary</label><select id="dDiet" name="dietary" class="field"><option value="">None</option>${diets.map(c => `<option ${d.dietary === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
@@ -1197,6 +1207,15 @@ async function setupView(query) {
         <div><label class="label" for="kName">Kitchen name</label><input id="kName" name="kitchenName" required maxlength="60" value="${esc(c?.kitchenName || '')}" class="field" placeholder="e.g. Abuela's Kitchen"></div>
         <div><label class="label" for="kCuisine">What you cook</label><input id="kCuisine" name="cuisine" maxlength="60" value="${esc(c?.cuisine || '')}" class="field" placeholder="e.g. Michoacán tamales"></div>
         <div><label class="label" for="kBio">Your story</label><textarea id="kBio" name="bio" rows="3" maxlength="600" class="field" placeholder="Where your recipes come from and what makes them yours">${esc(c?.bio || '')}</textarea></div>
+        ${(() => {
+          const sel = c?.country || S.config.countries.find(x => x.code === (navigator.language || '').split('-')[1])?.code || 'US';
+          const locked = !!c?.payouts?.stripeStarted;
+          return `<div><label class="label" for="kCountry">Country</label>
+            <select id="kCountry" name="country" class="field" ${locked ? 'disabled' : ''}>${S.config.countries.map(x =>
+              `<option value="${x.code}" ${x.code === sel ? 'selected' : ''}>${esc(x.name)} (${x.currency.toUpperCase()})</option>`).join('')}</select>
+            <p class="text-xs text-slate-500 mt-1">${locked ? 'Your payouts are set up for this country. Contact Chefy support to change it.'
+              : 'Your menu prices, orders and payouts use this country\'s currency.'}</p></div>`;
+        })()}
         <div><label class="label" for="kHood">Neighborhood</label><input id="kHood" name="neighborhood" maxlength="60" value="${esc(c?.neighborhood || S.me.user.neighborhood || '')}" class="field" placeholder="e.g. Mission District"></div>
         <div><label class="label" for="kAddr">Pickup address</label><input id="kAddr" name="pickupAddress" required autocomplete="street-address" maxlength="200" value="${esc(c?.pickupAddress || '')}" class="field" placeholder="Street and number"></div>
         <div><label class="label" for="kNotes">Pickup instructions <span class="font-normal text-slate-500">(optional)</span></label><input id="kNotes" name="pickupNotes" maxlength="300" value="${esc(c?.pickupNotes || '')}" class="field" placeholder="e.g. Ring #2, I'll come down. Pickup 4–7pm."></div>
@@ -1236,10 +1255,10 @@ async function setupView(query) {
       ${c.payouts.ready ? `<div class="p-3 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs mb-4"><i class="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>Payouts go to <strong>${esc(c.payouts.bankLabel)}</strong>.</div>` : ''}
       <form data-form="setup-bank" class="space-y-3" novalidate>
         <div><label class="label" for="bName">Bank</label><input id="bName" name="bank" required maxlength="40" class="field" placeholder="e.g. Checking at your bank"></div>
-        <div class="grid grid-cols-2 gap-3">
+        ${c.country === 'US' ? `<div class="grid grid-cols-2 gap-3">
           <div><label class="label" for="bRouting">Routing number</label><input id="bRouting" name="routing" inputmode="numeric" maxlength="9" required class="field" placeholder="9 digits"></div>
           <div><label class="label" for="bAccount">Account number</label><input id="bAccount" name="account" inputmode="numeric" maxlength="17" required class="field" placeholder="Account"></div>
-        </div>
+        </div>` : `<div><label class="label" for="bAccount">IBAN or account number</label><input id="bAccount" name="account" maxlength="40" autocapitalize="characters" required class="field" placeholder="e.g. DE89 3704 0044 0532 0130 00"></div>`}
         <p class="text-xs text-slate-500">Demo payments mode: only the last 4 digits are stored. With Stripe connected, bank details are collected by Stripe and never touch Chefy.</p>
         ${errorBox()}
         <button class="btn-primary" type="submit">${c.payouts.ready ? 'Update bank account' : 'Save and continue'}</button>
@@ -1298,7 +1317,8 @@ async function adminView() {
     <section class="space-y-4">
       <div class="grid grid-cols-2 gap-3 lg:max-w-xl">
         <div class="card p-3.5 lg:p-5"><p class="text-xs font-semibold text-slate-500">Paid orders</p><p class="text-xl font-black">${q.totals.orders}</p></div>
-        <div class="card p-3.5"><p class="text-xs font-semibold text-slate-500">Chefy revenue</p><p class="text-xl font-black">${money(q.totals.revenue)}</p></div>
+        <div class="card p-3.5"><p class="text-xs font-semibold text-slate-500">Chefy revenue</p><p class="text-xl font-black">${(q.totals.revenueByCurrency || []).length
+          ? q.totals.revenueByCurrency.map(r => `<span class="block">${money(r.amount, r.currency)}</span>`).join('') : money(0)}</p></div>
       </div>
       <div class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start"><div class="space-y-3">
       <h1 class="text-base font-bold text-slate-900">Permits to check (${q.permits.length})</h1>
@@ -1315,11 +1335,11 @@ async function adminView() {
       <h2 class="text-base font-bold text-slate-900 pt-2 lg:pt-0">Problems reported (${q.issues.length})</h2>
       ${q.issues.length ? q.issues.map(o => `
         <div class="card p-4 space-y-2 text-xs">
-          <p class="text-sm font-bold text-slate-900">${meta([esc(o.code), esc(o.chef.kitchenName), `<span class="font-normal text-slate-500 tabular-nums">${money(o.total)}</span>`])}</p>
+          <p class="text-sm font-bold text-slate-900">${meta([esc(o.code), esc(o.chef.kitchenName), `<span class="font-normal text-slate-500 tabular-nums">${money(o.total, o.currency)}</span>`])}</p>
           <p class="text-slate-600">Customer: ${esc(o.eater.name)}</p><p class="text-slate-600">${o.items.map(i => `${i.qty}× ${esc(i.title)}`).join(', ')}</p>
           <p class="pl-3 border-l-2 border-rose-400 text-rose-800">“${esc(o.issue.reason)}”</p>
           <div class="flex gap-2"><button data-act="issue" data-code="${esc(o.code)}" data-d="dismiss" class="flex-1 h-11 rounded-xl border border-slate-200 font-bold">Dismiss</button>
-            <button data-act="issue" data-code="${esc(o.code)}" data-d="refund" class="flex-1 h-11 rounded-xl bg-rose-600 text-white font-bold">Refund ${money(o.total)}</button></div>
+            <button data-act="issue" data-code="${esc(o.code)}" data-d="refund" class="flex-1 h-11 rounded-xl bg-rose-600 text-white font-bold">Refund ${money(o.total, o.currency)}</button></div>
         </div>`).join('') : `<p class="text-sm text-slate-500">No open problems.</p>`}
       </div></div>
     </section>`;
@@ -1389,7 +1409,7 @@ const ACT = {
     const instant = el.dataset.instant === '1';
     if (!confirm(instant ? 'Send your balance now with an instant payout?' : 'Send your balance to your bank? It arrives in 1–2 business days.')) return;
     el.disabled = true;
-    try { const r = await api('/api/chef/payouts', { method: 'POST', body: { instant } }); toast(`${money(r.amount - (r.fee || 0))} on its way`); } catch (e) { toast(e.message); }
+    try { const r = await api('/api/chef/payouts', { method: 'POST', body: { instant } }); toast(`${money(r.amount - (r.fee || 0), r.currency || myCur())} on its way`); } catch (e) { toast(e.message); }
     render();
   },
   'stripe-onboard': async el => { setBusy(el, true, 'Opening Stripe…'); try { location.href = (await api('/api/chef/stripe/onboard', { method: 'POST', body: {} })).url; } catch (e) { setBusy(el, false); toast(e.message); } },

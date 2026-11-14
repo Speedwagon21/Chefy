@@ -178,3 +178,66 @@ test('full order lifecycle with held payment, review, refund and payout', async 
   await eater('POST', '/api/auth/logout', {});
   assert.equal((await eater('GET', '/api/orders')).status, 401);
 });
+
+test('cooks outside the US sell, get charged and get paid in their own currency', async () => {
+  const cook = client(), eater = client(), admin = client();
+  assert.equal((await cook('POST', '/api/auth/signup', { name: 'Lena K', email: 'lena@test.dev', password: 'spaetzle-2026' })).status, 201);
+  assert.equal((await eater('POST', '/api/auth/signup', { name: 'Tom B', email: 'tom@test.dev', password: 'hungry-2026' })).status, 201);
+  assert.equal((await admin('POST', '/api/auth/signup', { name: 'Ops', email: 'ops@test.dev', password: 'admin-pass-2' })).status, 201);
+  dbRun('UPDATE users SET is_admin = 1 WHERE email = ?', 'ops@test.dev');
+
+  const cfg = (await eater('GET', '/api/config')).body;
+  assert.ok(cfg.countries.some(c => c.code === 'DE' && c.currency === 'eur'));
+  assert.equal(cfg.currencies.eur.pickup, 139);
+
+  assert.equal((await cook('POST', '/api/chef', { kitchenName: 'Lena', pickupAddress: 'Kastanienallee 1', country: 'ZA' })).status, 400, 'unsupported country');
+  let r = await cook('POST', '/api/chef', { kitchenName: 'Lenas Küche', pickupAddress: 'Kastanienallee 1', country: 'de' });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.chef.country, 'DE');
+  assert.equal(r.body.chef.currency, 'eur');
+
+  // non-US bank details: IBAN instead of a routing number
+  assert.equal((await cook('POST', '/api/chef/bank', { bank: 'Sparkasse', account: 'x' })).status, 400);
+  assert.equal((await cook('POST', '/api/chef/bank', { bank: 'Sparkasse', account: 'DE89 3704 0044 0532 0130 00' })).body.chef.payouts.bankLabel, 'Sparkasse •••• 3000');
+
+  // price limits come from the currency
+  const big = await cook('POST', '/api/chef/dishes', { title: 'Feast', categories: ['Other'], price: 451, description: 'x' });
+  assert.equal(big.status, 400);
+  assert.match(big.body.error, /€/);
+  const dish = await cook('POST', '/api/chef/dishes', { title: 'Käsespätzle', categories: ['Comfort Food'], price: 12, description: 'With onions' });
+  assert.equal(dish.status, 201);
+  assert.equal(dish.body.dish.currency, 'eur');
+
+  const permitFile = await cook('POST', '/api/uploads', { kind: 'permit', dataUrl: PNG });
+  await cook('POST', '/api/chef/permit', { state: 'Other', number: 'BE-4471', expiry: '2030-01-01', file: permitFile.body.file });
+  const chefId = r.body.chef.id;
+  assert.equal((await admin('POST', `/api/admin/permits/${chefId}`, { decision: 'verified' })).status, 200);
+  assert.equal((await eater('GET', '/api/dishes')).body.dishes.find(d => d.id === dish.body.dish.id).chef.currency, 'eur');
+
+  // order is priced in EUR with the EUR fee
+  r = await eater('POST', '/api/orders', { items: [{ dishId: dish.body.dish.id, qty: 2 }], fulfillment: 'pickup', tipPercent: 10 });
+  assert.equal(r.status, 201);
+  const o = r.body.order;
+  assert.equal(o.currency, 'eur');
+  assert.equal(o.subtotal, 2400); assert.equal(o.fee, 139); assert.equal(o.tip, 240); assert.equal(o.total, 2779);
+  await eater('POST', `/api/orders/${o.code}/confirm`, { demoCard: { brand: 'Visa', last4: '4242' } });
+  await cook('POST', `/api/chef/orders/${o.code}/accept`, {});
+  assert.equal((await cook('POST', `/api/chef/orders/${o.code}/ready`, {})).body.order.payment.status, 'captured');
+
+  // country can't change once there are orders
+  const lock = await cook('POST', '/api/chef', { country: 'FR' });
+  assert.equal(lock.status, 409);
+  assert.equal((await cook('POST', '/api/chef', { country: 'DE', bio: 'Same country is fine' })).status, 200);
+
+  // payout is in EUR, ledger text uses €
+  const sum = (await cook('GET', '/api/chef/summary')).body;
+  assert.equal(sum.balance.available, 2400 - 240 + 240);
+  assert.ok(sum.ledger[0].detail.includes('€'));
+  const po = await cook('POST', '/api/chef/payouts', { instant: false });
+  assert.equal(po.body.currency, 'eur');
+
+  // admin revenue is reported per currency, never mixed
+  const q = (await admin('GET', '/api/admin/queue')).body;
+  const eur = q.totals.revenueByCurrency.find(x => x.currency === 'eur');
+  assert.equal(eur.amount, 240 + 139);
+});
