@@ -3,14 +3,15 @@
 const { all } = require('./db');
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const money = c => '$' + (c / 100).toFixed(2);
+// Same formatting as the app: each cook's own currency (see regions.js)
+const money = (c, currency = 'usd') => new Intl.NumberFormat('en', { style: 'currency', currency: String(currency || 'usd').toUpperCase() }).format(c / 100);
 const prep = t => String(t || '').replace(/(\d)\s*[\u2013\u2014-]\s*(\d)/g, '$1 to $2');
 
 // Live dishes from cooks whose permit is checked and who are taking orders; most ordered first.
 function liveDishes(paymentsMode) {
   const rows = all(`
     SELECT d.id, d.title, d.price_cents, d.prep_time, d.description, d.image_url, d.categories, d.category,
-           c.user_id AS chef_id, c.kitchen_name, c.neighborhood, c.charges_enabled,
+           c.user_id AS chef_id, c.kitchen_name, c.neighborhood, c.charges_enabled, c.currency,
            (SELECT COALESCE(SUM(oi.qty), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id
              WHERE oi.dish_id = d.id AND o.payment_status IN ('authorized', 'captured')) AS sold
     FROM dishes d JOIN chefs c ON c.user_id = d.chef_id
@@ -40,7 +41,7 @@ function render({ paymentsMode }) {
               <p class="offer-title">${esc(lead.title)}</p>
               <p class="offer-meta"><span>${esc(lead.kitchen_name)}</span>${lead.neighborhood ? `<span>${esc(lead.neighborhood)}</span>` : ''}${lead.prep_time ? `<span>Ready in ${esc(prep(lead.prep_time))}</span>` : ''}</p>
             </div>
-            <p class="offer-price">${money(lead.price_cents)}</p>
+            <p class="offer-price">${money(lead.price_cents, lead.currency)}</p>
             ${appLink(`chef/${lead.chef_id}`, 'Order this dish', 'btn btn-primary offer-action')}
           </figcaption>
         </figure>` : `
@@ -70,7 +71,7 @@ function render({ paymentsMode }) {
             ${img(d, 'photo dish-photo', { sizes: '(min-width: 60rem) 22rem, 70vw' })}
             <span class="dish-title">${esc(d.title)}</span>
             <span class="dish-meta"><span>${esc(d.kitchen_name)}</span></span>
-            <span class="dish-price">${money(d.price_cents)}</span>
+            <span class="dish-price">${money(d.price_cents, d.currency)}</span>
           </a>
         </li>`).join('')}
       </ul>
@@ -166,7 +167,7 @@ function render({ paymentsMode }) {
           <ol class="ticket-steps"><li>Placed</li><li>Cooking</li><li>Ready</li><li>Picked up</li></ol>
           <div class="ticket-pay">
             <p>${esc(lead ? lead.title : 'Your order')}</p>
-            <p class="ticket-amount">${lead ? money(lead.price_cents) : ''}</p>
+            <p class="ticket-amount">${lead ? money(lead.price_cents, lead.currency) : ''}</p>
             <p class="ticket-card"><span class="c c1">Card held, not charged</span><span class="c c2">Card held, not charged</span><span class="c c3">Charged now it's ready</span><span class="c c4">Charged</span></p>
           </div>
         </div>
