@@ -4,6 +4,7 @@ const { DATA_DIR } = require('./src/db');
 const auth = require('./src/auth');
 const { router, stripeWebhook, sweepAbandoned } = require('./src/api');
 const pay = require('./src/payments');
+const { renderLanding } = require('./src/landing');
 
 const app = express();
 app.disable('x-powered-by');
@@ -52,8 +53,15 @@ app.use('/api', (_req, _res, next) => next(new auth.HttpError(404, 'Not found.')
 app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads', 'public'), { maxAge: '30d', immutable: true }));
 app.use('/vendor/fonts', express.static(path.join(__dirname, 'node_modules', '@fontsource'), { maxAge: '30d' }));
 app.use('/vendor/fa', express.static(path.join(__dirname, 'node_modules', '@fortawesome', 'fontawesome-free'), { maxAge: '30d' }));
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
-app.get('/{*splat}', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+// The home page is rendered from the live menu; the app lives at /app.
+app.get('/', (_req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.type('html').send(renderLanding({ paymentsMode: pay.MODE }));
+});
+const sendApp = (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get(['/app', '/app/'], sendApp);
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', index: false }));
+app.get('/{*splat}', (_req, res) => res.redirect(302, '/'));
 
 // Errors: friendly message for expected ones, generic for the rest.
 app.use((err, _req, res, _next) => {

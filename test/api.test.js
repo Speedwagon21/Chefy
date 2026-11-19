@@ -174,6 +174,21 @@ test('full order lifecycle with held payment, review, refund and payout', async 
   migrateCategories();
   assert.deepEqual([rawOne('SELECT category, categories FROM dishes WHERE id = ?', legacy.lastInsertRowid)].map(r => [r.category, r.categories])[0], ['Street Food', 'Street Food']);
 
+  // the home page is rendered from the live menu and escapes what cooks type
+  await cook('PATCH', `/api/chef/dishes/${dish.body.dish.id}`, { available: true, title: 'Tamales <script>x</script>' });
+  const home = await fetch(base + '/');
+  const html = await home.text();
+  assert.equal(home.status, 200);
+  assert.match(html, /Dinner from<br> the kitchen<br> down the street\./);
+  assert.match(html, /Tamales &lt;script&gt;x&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<script>x<\/script>/);
+  assert.match(html, /href="\/app#\/chef\//);
+  const appPage = await fetch(base + '/app');
+  assert.match(await appPage.text(), /id="view"/);
+  const stray = await fetch(base + '/no-such-page', { redirect: 'manual' });
+  assert.equal(stray.status, 302);
+  assert.equal(stray.headers.get('location'), '/');
+
   // sign out ends the session
   await eater('POST', '/api/auth/logout', {});
   assert.equal((await eater('GET', '/api/orders')).status, 401);
